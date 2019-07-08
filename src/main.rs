@@ -19,6 +19,15 @@ enum Direction {
     SW,
 }
 
+const LEGAL_COMMANDS: &'static [&'static str] = &[
+    "go", "grab", "move", "pickup", "bite", "hit", "destroy", "shoot", "charge", "attack", "run",
+    "jump", "climb",
+];
+
+fn is_legal_command(s: &str, legal_commands: &[&str]) -> bool {
+    return legal_commands.iter().position(|&x| x == s) != None;
+}
+
 struct Exit {
     direction: Direction,
     target: usize,
@@ -140,9 +149,14 @@ fn main() {
 
         let mut userInput = input.split_whitespace();
 
-        command = match userInput.next() {
-            "go" => Some("you used the command go".to_string()),
-            _ => None,
-        }
+        match is_legal_command(userInput.next().unwrap(), LEGAL_COMMANDS) {
+            true => println!("command is legal"),
+            false => println!("command is illegal"),
+        };
+
+        // command = match is_legal_command(userInput.next().unwrap(), LEGAL_COMMANDS) {
+        //     true => Some("you used the command go".to_string()),
+        //     _ => None,
+        // }
     }
 }
