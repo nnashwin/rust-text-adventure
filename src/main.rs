@@ -24,8 +24,12 @@ const LEGAL_COMMANDS: &'static [&'static str] = &[
     "jump", "climb",
 ];
 
-fn is_legal_command(s: &str, legal_commands: &[&str]) -> bool {
-    return legal_commands.iter().position(|&x| x == s) != None;
+fn is_legal_command<'a>(command_input: &'a str, legal_commands: &[&str]) -> Option<&'a str> {
+    if legal_commands.iter().position(|&x| x == command_input) != None {
+        Some(command_input)
+    } else {
+        None
+    }
 }
 
 struct Exit {
@@ -147,11 +151,11 @@ fn main() {
             .ok()
             .expect("Failed to read line");
 
-        let mut userInput = input.split_whitespace();
+        let mut user_input = input.split_whitespace();
 
-        let predicate = match is_legal_command(userInput.next().unwrap(), LEGAL_COMMANDS) {
-            true => userInput.next(),
-            false => None,
+        let predicate = match is_legal_command(user_input.next().unwrap(), LEGAL_COMMANDS) {
+            Some(x) => println!("command Result: {}", x),
+            None => println!("command result was None"),
         };
 
         match predicate {
