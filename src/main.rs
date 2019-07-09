@@ -149,14 +149,14 @@ fn main() {
 
         let mut userInput = input.split_whitespace();
 
-        match is_legal_command(userInput.next().unwrap(), LEGAL_COMMANDS) {
-            true => println!("command is legal"),
-            false => println!("command is illegal"),
+        let predicate = match is_legal_command(userInput.next().unwrap(), LEGAL_COMMANDS) {
+            true => userInput.next(),
+            false => None,
         };
 
-        // command = match is_legal_command(userInput.next().unwrap(), LEGAL_COMMANDS) {
-        //     true => Some("you used the command go".to_string()),
-        //     _ => None,
-        // }
+        match predicate {
+            Some(result) => println!("{}", result),
+            None => println!("No words"),
+        }
     }
 }
