@@ -57,6 +57,11 @@ struct Room {
     items: Vec<Item>,
 }
 
+fn is_number(input: &str) -> bool {
+    println!("isNumber {}", input);
+    return false;
+}
+
 fn main() {
     let mut rooms = vec![
         Room {
@@ -151,16 +156,21 @@ fn main() {
             .ok()
             .expect("Failed to read line");
 
-        let mut user_input = input.split_whitespace();
+        let mut user_input = input.split_whitespace().peekable();
 
-        let predicate = match is_legal_command(user_input.next().unwrap(), LEGAL_COMMANDS) {
-            Some(x) => println!("command Result: {}", x),
-            None => println!("command result was None"),
+        let firstCommand = user_input.next().unwrap();
+
+        if is_legal_command(firstCommand, LEGAL_COMMANDS) == None {
+            println!("{} is not a legal command\n", firstCommand);
+            continue;
         };
 
-        match predicate {
-            Some(result) => println!("{}", result),
-            None => println!("No words"),
+        for word in user_input {
+            if is_number(word) {
+                println!("The word {} is a digit", word);
+            }
+
+            println!("{}", word);
         }
     }
 }
