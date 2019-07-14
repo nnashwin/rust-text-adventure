@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::io;
 
 #[derive(PartialEq)]
@@ -32,9 +33,13 @@ fn is_legal_command<'a>(command_input: &'a str, legal_commands: &[&str]) -> Opti
     }
 }
 
+fn is_number(input: &str) -> bool {
+    return input.parse::<i32>().is_ok();
+}
+
 struct Exit {
     direction: Direction,
-    target: usize,
+    target: i32,
     locked: bool,
     key: String,
 }
@@ -45,10 +50,17 @@ impl Exit {
     }
 }
 
+#[derive(Debug, Default)]
+struct Input {
+    command: String,
+    number: i32,
+    object_noun: String,
+}
+
 struct Item {
     name: String,
     description: String,
-    weight: usize,
+    weight: i32,
 }
 
 struct Room {
@@ -58,6 +70,13 @@ struct Room {
 }
 
 fn main() {
+    let mut inventory_map = HashMap::new();
+    inventory_map.insert("helmet", 0);
+    inventory_map.insert("buster", 0);
+    inventory_map.insert("boots", 0);
+    inventory_map.insert("lab2_key", 0);
+    inventory_map.insert("heat_armor", 0);
+
     let mut rooms = vec![
         Room {
             description: "You find yourself in a room. There is a door to the south and a door to the east.".to_string(),
@@ -139,6 +158,9 @@ fn main() {
     ];
     let mut command: Option<String> = None;
     let mut current_room = rooms.first();
+    let mut parsed_input = Input {
+        ..Default::default()
+    };
 
     while command == None {
         println!("{}", current_room.unwrap().description);
@@ -151,16 +173,29 @@ fn main() {
             .ok()
             .expect("Failed to read line");
 
-        let mut user_input = input.split_whitespace();
+        let mut user_input = input.split_whitespace().peekable();
 
-        let predicate = match is_legal_command(user_input.next().unwrap(), LEGAL_COMMANDS) {
-            Some(x) => println!("command Result: {}", x),
-            None => println!("command result was None"),
+        let first_command = user_input.next().unwrap();
+
+        let predicate = match is_legal_command(first_command, LEGAL_COMMANDS) {
+            Some(x) => x,
+            None => "invalid command",
         };
 
-        match predicate {
-            Some(result) => println!("{}", result),
-            None => println!("No words"),
+        if predicate == "invalid command" {
+            println!("'{}' is an invalid command\n", first_command);
+            continue;
         }
+
+        parsed_input.command = first_command.to_string();
+
+        for word in user_input {
+            println!("word {}, is_number {}", word, is_number(word));
+            if is_number(word) {
+                println!("The word is a digit")
+            }
+        }
+
+        println!("{:?}", parsed_input);
     }
 }
