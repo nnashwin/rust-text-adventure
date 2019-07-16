@@ -53,7 +53,7 @@ impl Exit {
 #[derive(Debug, Default)]
 struct Input {
     command: String,
-    number: i32,
+    number_of: i32,
     object_noun: String,
 }
 
@@ -68,11 +68,6 @@ struct Room {
     interactables: Vec<String>,
     items: Vec<Item>,
     exits: Vec<Exit>,
-}
-
-fn is_number(input: &str) -> bool {
-    println!("isNumber {}", input);
-    return false;
 }
 
 fn main() {
@@ -187,21 +182,15 @@ fn main() {
             continue;
         };
 
-        for word in user_input {
-            if is_number(word) {
-                println!("The word {} is a digit", word);
-            }
-
-            println!("{}", word);
-        }
-
         parsed_input.command = first_command.to_string();
 
         for word in user_input {
-            println!("word {}, is_number {}", word, is_number(word));
             if is_number(word) {
-                println!("The word is a digit")
+                println!("The word {} is a digit", word);
+                parsed_input.number_of = word.parse::<i32>().unwrap();
             }
+
+            println!("{}", word);
         }
 
         println!("{:?}", parsed_input);
