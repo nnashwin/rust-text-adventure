@@ -65,8 +65,9 @@ struct Item {
 
 struct Room {
     description: String,
-    exits: Vec<Exit>,
+    interactables: Vec<String>,
     items: Vec<Item>,
+    exits: Vec<Exit>,
 }
 
 fn main() {
@@ -78,84 +79,83 @@ fn main() {
     inventory_map.insert("heat_armor", 0);
 
     let mut rooms = vec![
-        Room {
-            description: "You find yourself in a room. There is a door to the south and a door to the east.".to_string(),
-            exits: vec![
-                Exit {
-                    direction: Direction::S,
-                    target: 2,
-                    locked: false,
-                    key: String::from(""),
-                },
-                Exit {
-                    direction: Direction::E,
-                    target: 1,
-                    locked: false,
-                    key: String::from(""),
-                },
-                Exit {
-                    direction: Direction::E,
-                    target: 1,
-                    locked: false,
-                    key: String::from(""),
-                },
-            ],
-            items: vec![],
-        },
-        Room {
-            description: "You find yourself in a room. There is a door to the west and a door to the south.".to_string(),
-            exits: vec![
-                Exit {
-                    direction: Direction::W,
-                    target: 0,
-                    locked: false,
-                    key: String::from(""),
-                },
-                Exit {
-                    direction: Direction::S,
-                    target: 3,
-                    locked: false,
-                    key: String::from(""),
-                },
-            ],
-            items: vec![],
-        },
-        Room {
-            description: "You find yourself in a room. There is a door to the north. A key is here.".to_string(),
-            exits: vec![
-                Exit {
-                    direction: Direction::N,
-                    target: 0,
-                    locked: false,
-                    key: String::from(""),
-                },
-            ],
-            items: vec![],
-        },
-        Room {
-            description: "You find yourself in a room. There is a door to the north. The door to the south is locked.".to_string(),
-            exits: vec![
-                Exit {
-                    direction: Direction::N,
-                    target: 1,
-                    locked: false,
-                    key: String::from(""),
-                },
-                Exit {
-                    direction: Direction::S,
-                    target: 4,
-                    locked: true,
-                    key: String::from(""),
-                },
-            ],
-            items: vec![],
-        },
-        Room {
-            description: "Dungeon exit".to_string(),
-            exits: vec![],
-            items: vec![],
-}
-    ];
+            Room {
+                description: "You find yourself in a room. There is a door to the south and a door to the east.".to_string(),
+                exits: vec![
+                    Exit {
+                        direction: Direction::S,
+                        target: 2,
+                        locked: false,
+                        key: String::from(""),
+                    },
+                    Exit {
+                        direction: Direction::E,
+                        target: 1,
+                        locked: false,
+                        key: String::from(""),
+                    },
+                ],
+                interactables: vec!["exit_s".to_string()],
+                items: vec![],
+            },
+            Room {
+                description: "You find yourself in a room. There is a door to the west and a door to the south.".to_string(),
+                exits: vec![
+                    Exit {
+                        direction: Direction::W,
+                        target: 0,
+                        locked: false,
+                        key: String::from(""),
+                    },
+                    Exit {
+                        direction: Direction::S,
+                        target: 3,
+                        locked: false,
+                        key: String::from(""),
+                    },
+                ],
+                interactables: vec!["exit_s".to_string()],
+                items: vec![],
+            },
+            Room {
+                description: "You find yourself in a room. There is a door to the north. A key is here.".to_string(),
+                exits: vec![
+                    Exit {
+                        direction: Direction::N,
+                        target: 0,
+                        locked: false,
+                        key: String::from(""),
+                    },
+                ],
+                interactables: vec!["exit_s".to_string()],
+                items: vec![],
+            },
+            Room {
+                description: "You find yourself in a room. There is a door to the north. The door to the south is locked.".to_string(),
+                exits: vec![
+                    Exit {
+                        direction: Direction::N,
+                        target: 1,
+                        locked: false,
+                        key: String::from(""),
+                    },
+                    Exit {
+                        direction: Direction::S,
+                        target: 4,
+                        locked: true,
+                        key: String::from(""),
+                    },
+                ],
+                interactables: vec!["exit_s".to_string()],
+                items: vec![],
+            },
+            Room {
+                description: "Dungeon exit".to_string(),
+                exits: vec![],
+                interactables: vec!["exit_s".to_string()],
+                items: vec![],
+    }
+        ];
     let mut command: Option<String> = None;
     let mut current_room = rooms.first();
     let mut parsed_input = Input {
