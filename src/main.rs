@@ -1,3 +1,4 @@
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::io;
 
@@ -37,6 +38,10 @@ fn is_number(input: &str) -> bool {
     return input.parse::<i32>().is_ok();
 }
 
+fn is_obj_noun<'a>(word: &'a str) -> bool {
+    return false;
+}
+
 struct Exit {
     direction: Direction,
     target: i32,
@@ -57,26 +62,89 @@ struct Input {
     object_noun: String,
 }
 
+trait Equippable {
+    fn is_equipped(&self) {}
+}
+
+#[derive(Debug)]
+enum ItemState {
+    Room,
+    Inventory,
+    Equipped,
+}
+
+#[derive(Debug)]
 struct Item {
     name: String,
     description: String,
     weight: i32,
+    location: ItemState,
+}
+
+fn get_item_vec() -> Vec<(String, Item)> {
+    return vec![
+        (
+            "helmet".to_string(),
+            Item {
+                name: "helmet".to_string(),
+                description: "A blue helmet covered in dirt".to_string(),
+                weight: 30,
+                location: ItemState::Room,
+            },
+        ),
+        (
+            "buster".to_string(),
+            Item {
+                name: "buster".to_string(),
+                description: "A large cannon with four buttons".to_string(),
+                weight: 20,
+                location: ItemState::Room,
+            },
+        ),
+    ];
+}
+
+impl Item {
+    fn new(name: String, description: String, weight: i32) -> Self {
+        Item {
+            name: name,
+            description: description,
+            weight: weight,
+            location: ItemState::Room,
+        }
+    }
+
+    fn to_inventory(&mut self) {
+        self.location = match self.location {
+            _ => ItemState::Inventory,
+        }
+    }
+
+    fn equip(&mut self) {
+        self.location = match self.location {
+            ItemState::Room => ItemState::Room,
+            _ => ItemState::Equipped,
+        }
+    }
+
+    fn unequip(&mut self) {
+        self.location = match self.location {
+            ItemState::Room => ItemState::Room,
+            _ => ItemState::Inventory,
+        }
+    }
 }
 
 struct Room {
     description: String,
-    interactables: Vec<String>,
     items: Vec<Item>,
     exits: Vec<Exit>,
 }
 
 fn main() {
-    let mut inventory_map = HashMap::new();
-    inventory_map.insert("helmet", 0);
-    inventory_map.insert("buster", 0);
-    inventory_map.insert("boots", 0);
-    inventory_map.insert("lab2_key", 0);
-    inventory_map.insert("heat_armor", 0);
+    let item_vec = get_item_vec();
+    println!("{:?}", item_vec);
+    let inventory_map: HashMap<_, _> = item_vec.into_iter().collect();
 
     let mut rooms = vec![
             Room {
@@ -95,7 +163,6 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
-                interactables: vec!["exit_s".to_string()],
                 items: vec![],
             },
             Room {
@@ -114,7 +181,6 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
-                interactables: vec!["exit_s".to_string()],
                 items: vec![],
             },
             Room {
@@ -127,7 +193,6 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
-                interactables: vec!["exit_s".to_string()],
                 items: vec![],
             },
             Room {
@@ -146,13 +211,11 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
-                interactables: vec!["exit_s".to_string()],
                 items: vec![],
             },
             Room {
                 description: "Dungeon exit".to_string(),
                 exits: vec![],
-                interactables: vec!["exit_s".to_string()],
                 items: vec![],
     }
         ];
@@ -186,11 +249,13 @@ fn main() {
 
         for word in user_input {
             if is_number(word) {
-                println!("The word {} is a digit", word);
                 parsed_input.number_of = word.parse::<i32>().unwrap();
+                continue;
             }
 
-            println!("{}", word);
+            if is_obj_noun(word) {
+                println!("The word '{}' is an object_noun", word)
+            }
         }
 
         println!("{:?}", parsed_input);
