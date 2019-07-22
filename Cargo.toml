@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 lazy_static = "0.1.*"
+phf = "0.7.24" 
