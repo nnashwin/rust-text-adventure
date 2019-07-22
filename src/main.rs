@@ -1,6 +1,9 @@
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::io;
+
+mod commands;
+
+use crate::commands::*;
 
 #[derive(PartialEq)]
 enum Command {
@@ -21,11 +24,6 @@ enum Direction {
     SW,
 }
 
-const LEGAL_COMMANDS: &'static [&'static str] = &[
-    "go", "grab", "move", "pickup", "bite", "hit", "destroy", "shoot", "charge", "attack", "run",
-    "jump", "climb",
-];
-
 fn is_legal_command<'a>(command_input: &'a str, legal_commands: &[&str]) -> Option<&'a str> {
     if legal_commands.iter().position(|&x| x == command_input) != None {
         Some(command_input)
@@ -38,8 +36,8 @@ fn is_number(input: &str) -> bool {
     return input.parse::<i32>().is_ok();
 }
 
-fn is_obj_noun<'a>(word: &'a str) -> bool {
-    return false;
+fn is_obj_noun<'a>(word: &'a str, item_map: &HashMap<String, Item>) -> bool {
+    return item_map.contains_key(word);
 }
 
 struct Exit {
@@ -57,7 +55,7 @@ impl Exit {
 
 #[derive(Debug, Default)]
 struct Input {
-    command: String,
+    intent: String,
     number_of: i32,
     object_noun: String,
 }
@@ -142,10 +140,6 @@ struct Room {
 }
 
 fn main() {
-    let item_vec = get_item_vec();
-    println!("{:?}", item_vec);
-    let inventory_map: HashMap<_, _> = item_vec.into_iter().collect();
-
     let mut rooms = vec![
             Room {
                 description: "You find yourself in a room. There is a door to the south and a door to the east.".to_string(),
@@ -219,13 +213,16 @@ fn main() {
                 items: vec![],
     }
         ];
-    let mut command: Option<String> = None;
+    let mut movement: Option<String> = None;
     let mut current_room = rooms.first();
     let mut parsed_input = Input {
         ..Default::default()
     };
 
-    while command == None {
+    let item_vec = get_item_vec();
+    let inventory_map: HashMap<_, _> = item_vec.into_iter().collect();
+
+    while movement == None {
         println!("{}", current_room.unwrap().description);
         println!("\nWhat do you do?\n");
 
@@ -238,26 +235,25 @@ fn main() {
 
         let mut user_input = input.split_whitespace().peekable();
 
-        let first_command = user_input.next().unwrap();
+        // transform input to parsed form
 
-        if is_legal_command(first_command, LEGAL_COMMANDS) == None {
-            println!("{} is not a legal command\n", first_command);
+        let intent = user_input.next().unwrap();
+
+        if is_legal_command(intent, commands::legal_commands::LEGAL_COMMANDS) == None {
+            println!("{} is not a legal command\n", intent);
             continue;
         };
 
-        parsed_input.command = first_command.to_string();
-
+        parsed_input.intent = intent.to_string();
         for word in user_input {
             if is_number(word) {
                 parsed_input.number_of = word.parse::<i32>().unwrap();
                 continue;
             }
 
-            if is_obj_noun(word) {
-                println!("The word '{}' is an object_noun", word)
+            if inventory_map.contains_key(word) {
+                parsed_input.object_noun = word.to_string();
             }
         }
-
-        println!("{:?}", parsed_input);
     }
 }
