@@ -3,15 +3,6 @@ use std::io;
 
 mod commands;
 
-use crate::commands::*;
-
-#[derive(PartialEq)]
-enum Command {
-    Go(Direction),
-    Unlock(Direction),
-    Interact(String),
-}
-
 #[derive(PartialEq)]
 enum Direction {
     N,
@@ -24,16 +15,8 @@ enum Direction {
     SW,
 }
 
-fn is_legal_command<'a>(command_input: &'a str, legal_commands: &[&str]) -> Option<&'a str> {
-    if legal_commands.iter().position(|&x| x == command_input) != None {
-        Some(command_input)
-    } else {
-        None
-    }
-}
-
-fn is_number(input: &str) -> bool {
-    return input.parse::<i32>().is_ok();
+fn is_legal_command(command: &str) -> bool {
+    return commands::legal_commands::LEGAL_COMMANDS.contains_key(command);
 }
 
 fn is_obj_noun<'a>(word: &'a str, item_map: &HashMap<String, Item>) -> bool {
@@ -56,12 +39,24 @@ impl Exit {
 #[derive(Debug, Default)]
 struct Input {
     intent: String,
-    number_of: i32,
     object_noun: String,
 }
 
-trait Equippable {
-    fn is_equipped(&self) {}
+#[derive(Debug)]
+struct Interactable {
+    name: String,
+    before_interaction_description: String,
+    after_interaction_description: String,
+    interacted: bool,
+}
+
+impl Interactable {
+    fn get_description(&self) -> &String {
+        match self.interacted {
+            true => &self.before_interaction_description,
+            false => &self.after_interaction_description,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -103,15 +98,6 @@ fn get_item_vec() -> Vec<(String, Item)> {
 }
 
 impl Item {
-    fn new(name: String, description: String, weight: i32) -> Self {
-        Item {
-            name: name,
-            description: description,
-            weight: weight,
-            location: ItemState::Room,
-        }
-    }
-
     fn to_inventory(&mut self) {
         self.location = match self.location {
             _ => ItemState::Inventory,
@@ -135,6 +121,7 @@ impl Item {
 
 struct Room {
     description: String,
+    interactables: Vec<Interactable>,
     items: Vec<Item>,
     exits: Vec<Exit>,
 }
@@ -146,8 +133,7 @@ fn main() {
                 exits: vec![
                     Exit {
                         direction: Direction::S,
-                        target: 2,
-                        locked: false,
+                        target: 2, locked: false,
                         key: String::from(""),
                     },
                     Exit {
@@ -157,6 +143,7 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
+                interactables: vec![],
                 items: vec![],
             },
             Room {
@@ -175,6 +162,7 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
+                interactables: vec![],
                 items: vec![],
             },
             Room {
@@ -187,6 +175,7 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
+                interactables: vec![],
                 items: vec![],
             },
             Room {
@@ -205,11 +194,13 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
+                interactables: vec![],
                 items: vec![],
             },
             Room {
                 description: "Dungeon exit".to_string(),
                 exits: vec![],
+                interactables: vec![],
                 items: vec![],
     }
         ];
@@ -237,23 +228,22 @@ fn main() {
 
         // transform input to parsed form
 
-        let intent = user_input.next().unwrap();
+        let first_command = user_input.next().unwrap();
 
-        if is_legal_command(intent, commands::legal_commands::LEGAL_COMMANDS) == None {
-            println!("{} is not a legal command\n", intent);
+        if !is_legal_command(first_command) {
+            println!("{} is not a legal command\n", first_command);
             continue;
         };
 
-        parsed_input.intent = intent.to_string();
+        parsed_input.intent = first_command.to_string();
         for word in user_input {
-            if is_number(word) {
-                parsed_input.number_of = word.parse::<i32>().unwrap();
-                continue;
-            }
-
-            if inventory_map.contains_key(word) {
-                parsed_input.object_noun = word.to_string();
+            if parsed_input.object_noun == "" {
+                if inventory_map.contains_key(word) {
+                    parsed_input.object_noun = word.to_string();
+                }
             }
         }
+
+        println!("{:?}", parsed_input);
     }
 }
