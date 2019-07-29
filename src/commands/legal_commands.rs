@@ -1,6 +1,6 @@
 use phf::phf_map;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Intent {
     MOVEMENT,
     USE,
@@ -8,6 +8,13 @@ pub enum Intent {
     CHARGE,
     ELEVATE,
     INTERACT,
+    NONE,
+}
+
+impl Default for Intent {
+    fn default() -> Self {
+        Intent::NONE
+    }
 }
 
 pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
