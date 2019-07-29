@@ -3,7 +3,7 @@ use std::io;
 
 mod commands;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 enum Direction {
     N,
     S,
@@ -23,6 +23,7 @@ fn is_obj_noun<'a>(word: &'a str, item_map: &HashMap<String, Item>) -> bool {
     return item_map.contains_key(word);
 }
 
+#[derive(Debug)]
 struct Exit {
     direction: Direction,
     target: i32,
@@ -40,6 +41,17 @@ impl Exit {
 struct Input {
     intent: String,
     object_noun: String,
+    is_interactable: bool,
+    is_item: bool,
+}
+
+impl Input {
+    fn reset_input(&mut self) {
+        self.intent = "".to_string();
+        self.object_noun = "".to_string();
+        self.is_interactable = false;
+        self.is_item = false;
+    }
 }
 
 #[derive(Debug)]
@@ -119,6 +131,7 @@ impl Item {
     }
 }
 
+#[derive(Debug)]
 struct Room {
     description: String,
     interactables: Vec<Interactable>,
@@ -143,7 +156,7 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
-                interactables: vec![],
+                interactables: vec![Interactable{name: "stone".to_string(), before_interaction_description: "You see a stone sitting in between two logs".to_string(), after_interaction_description: "The stone rolls onto the floor".to_string(), interacted: false}],
                 items: vec![],
             },
             Room {
@@ -240,10 +253,27 @@ fn main() {
             if parsed_input.object_noun == "" {
                 if inventory_map.contains_key(word) {
                     parsed_input.object_noun = word.to_string();
+                    parsed_input.is_item = true;
+                    continue;
                 }
+
+                if current_room
+                    .unwrap()
+                    .interactables
+                    .iter()
+                    .any(|x| x.name == word)
+                {
+                    parsed_input.object_noun = word.to_string();
+                    parsed_input.is_interactable = true;
+                    continue;
+                }
+
+                println!("{:?}", current_room.unwrap());
             }
         }
 
         println!("{:?}", parsed_input);
+
+        parsed_input.reset_input();
     }
 }
