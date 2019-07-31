@@ -260,8 +260,7 @@ fn main() {
 
         let mut user_input = input.split_whitespace().peekable();
 
-        // transform input to parsed form
-
+        // PARSE USER INPUT
         let first_command = user_input.next().unwrap();
 
         if !is_legal_command(first_command) {
@@ -300,6 +299,17 @@ fn main() {
         }
 
         println!("{:?}", parsed_input);
+
+        // TAKE APPROPRIATE ACTIONS
+        match parsed_input.intent {
+            commands::legal_commands::Intent::ATTACK => println!("attack"),
+            commands::legal_commands::Intent::CHARGE => println!("charge"),
+            commands::legal_commands::Intent::ELEVATE => println!("elevate"),
+            commands::legal_commands::Intent::INTERACT => println!("interact"),
+            commands::legal_commands::Intent::MOVEMENT => println!("movement"),
+            commands::legal_commands::Intent::USE => println!("use"),
+            _ => println!("You didn't choose an appropriate command"),
+        }
 
         parsed_input.reset_input();
 
