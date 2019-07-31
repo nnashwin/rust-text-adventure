@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::io;
 
 mod commands;
-
 #[derive(PartialEq, Debug)]
 enum Direction {
     N,
@@ -39,7 +38,7 @@ impl Exit {
 
 #[derive(Debug, Default)]
 struct Input {
-    intent: String,
+    intent: commands::legal_commands::Intent,
     object_noun: String,
     is_interactable: bool,
     is_item: bool,
@@ -47,7 +46,7 @@ struct Input {
 
 impl Input {
     fn reset_input(&mut self) {
-        self.intent = "".to_string();
+        self.intent = commands::legal_commands::Intent::NONE;
         self.object_noun = "".to_string();
         self.is_interactable = false;
         self.is_item = false;
@@ -248,11 +247,13 @@ fn main() {
             continue;
         };
 
-        parsed_input.intent = first_command.to_string();
+        parsed_input.intent = commands::legal_commands::parse_command(first_command).unwrap();
+
         for word in user_input {
+            let lowercase_word = word.to_lowercase();
             if parsed_input.object_noun == "" {
-                if inventory_map.contains_key(word) {
-                    parsed_input.object_noun = word.to_string();
+                if inventory_map.contains_key(lowercase_word.as_str()) {
+                    parsed_input.object_noun = lowercase_word;
                     parsed_input.is_item = true;
                     continue;
                 }
@@ -261,19 +262,19 @@ fn main() {
                     .unwrap()
                     .interactables
                     .iter()
-                    .any(|x| x.name == word)
+                    .any(|x| x.name == lowercase_word)
                 {
-                    parsed_input.object_noun = word.to_string();
+                    parsed_input.object_noun = lowercase_word;
                     parsed_input.is_interactable = true;
                     continue;
                 }
-
-                println!("{:?}", current_room.unwrap());
             }
         }
 
         println!("{:?}", parsed_input);
 
         parsed_input.reset_input();
+
+        println!("{:?}", parsed_input);
     }
 }
