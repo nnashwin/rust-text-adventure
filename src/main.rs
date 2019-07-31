@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 use std::io;
 
+use phf::phf_map;
+
 mod commands;
-#[derive(PartialEq, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 enum Direction {
     N,
     S,
@@ -14,8 +16,27 @@ enum Direction {
     SW,
 }
 
+static DIRECTION_MAPPINGS: phf::Map<&'static str, Direction> = phf_map! {
+    "north" => Direction::N,
+    "south" => Direction::S,
+    "east" => Direction::E,
+    "west" => Direction::W,
+    "northeast" => Direction::NE,
+    "northwest" => Direction::NW,
+    "southeast" => Direction::SE,
+    "southwest" => Direction::SW,
+};
+
+fn choose_direction(text: &str) -> Option<Direction> {
+    DIRECTION_MAPPINGS.get(text).cloned()
+}
+
+fn is_direction(direction: &str) -> bool {
+    DIRECTION_MAPPINGS.contains_key(direction)
+}
+
 fn is_legal_command(command: &str) -> bool {
-    return commands::legal_commands::LEGAL_COMMANDS.contains_key(command);
+    commands::legal_commands::LEGAL_COMMANDS.contains_key(command)
 }
 
 fn is_obj_noun<'a>(word: &'a str, item_map: &HashMap<String, Item>) -> bool {
@@ -39,9 +60,10 @@ impl Exit {
 #[derive(Debug, Default)]
 struct Input {
     intent: commands::legal_commands::Intent,
-    object_noun: String,
+    is_direction: bool,
     is_interactable: bool,
     is_item: bool,
+    object_noun: String,
 }
 
 impl Input {
@@ -252,6 +274,12 @@ fn main() {
         for word in user_input {
             let lowercase_word = word.to_lowercase();
             if parsed_input.object_noun == "" {
+                if is_direction(lowercase_word.as_str()) {
+                    parsed_input.object_noun = lowercase_word;
+                    parsed_input.is_direction = true;
+                    continue;
+                }
+
                 if inventory_map.contains_key(lowercase_word.as_str()) {
                     parsed_input.object_noun = lowercase_word;
                     parsed_input.is_item = true;
