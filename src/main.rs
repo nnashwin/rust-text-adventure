@@ -4,6 +4,22 @@ use std::io;
 use phf::phf_map;
 
 mod commands;
+
+#[derive(Debug)]
+struct Command {
+    intent: commands::legal_commands::Intent,
+    direction: Option<Direction>,
+    item: Option<Item>,
+    interactable: Option<Interactable>,
+}
+
+fn check_command_optional(optional: Option<Command>) -> bool {
+    match optional {
+        Some(command) => true,
+        None => false,
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 enum Direction {
     N,
@@ -14,6 +30,13 @@ enum Direction {
     NW,
     SE,
     SW,
+    NONE,
+}
+
+impl Default for Direction {
+    fn default() -> Self {
+        Direction::NONE
+    }
 }
 
 static DIRECTION_MAPPINGS: phf::Map<&'static str, Direction> = phf_map! {
@@ -167,7 +190,8 @@ fn main() {
                 exits: vec![
                     Exit {
                         direction: Direction::S,
-                        target: 2, locked: false,
+                        target: 2,
+                        locked: false,
                         key: String::from(""),
                     },
                     Exit {
@@ -239,6 +263,7 @@ fn main() {
     }
         ];
     let mut movement: Option<String> = None;
+    let mut command: Option<Command> = None;
     let mut current_room = rooms.first();
     let mut parsed_input = Input {
         ..Default::default()
@@ -246,8 +271,9 @@ fn main() {
 
     let item_vec = get_item_vec();
     let inventory_map: HashMap<_, _> = item_vec.into_iter().collect();
+    let player_inventory: HashMap<String, Item> = HashMap::new();
 
-    while movement == None {
+    while let None = command {
         println!("{}", current_room.unwrap().description);
         println!("\nWhat do you do?\n");
 
