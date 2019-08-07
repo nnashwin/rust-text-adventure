@@ -8,7 +8,7 @@ mod commands;
 #[derive(Debug)]
 struct Command {
     intent: commands::legal_commands::Intent,
-    direction: Option<Direction>,
+    target_room: Option<i32>,
     item: Option<Item>,
     interactable: Option<Interactable>,
 }
@@ -50,7 +50,7 @@ static DIRECTION_MAPPINGS: phf::Map<&'static str, Direction> = phf_map! {
     "southwest" => Direction::SW,
 };
 
-fn choose_direction(text: &str) -> Option<Direction> {
+fn text_to_direction(text: &str) -> Option<Direction> {
     DIRECTION_MAPPINGS.get(text).cloned()
 }
 
@@ -332,7 +332,29 @@ fn main() {
             commands::legal_commands::Intent::CHARGE => println!("charge"),
             commands::legal_commands::Intent::ELEVATE => println!("elevate"),
             commands::legal_commands::Intent::INTERACT => println!("interact"),
-            commands::legal_commands::Intent::MOVEMENT => println!("movement"),
+            commands::legal_commands::Intent::MOVEMENT => {
+                let direction: Direction = text_to_direction(&parsed_input.object_noun).unwrap();
+
+                let exit: Option<&Exit> = current_room
+                    .unwrap()
+                    .exits
+                    .iter()
+                    .find(|&x| x.direction == direction);
+
+                // Print out incorrect direction
+                if parsed_input.is_direction {
+                    if exit.is_none() {
+                        println!("There is no exit leaving {}", parsed_input.object_noun);
+                    } else if parsed_input.is_direction && exit.is_some() {
+                        command = Some(Command {
+                            intent: commands::legal_commands::Intent::MOVEMENT,
+                            target_room: Some(exit.unwrap().target),
+                            interactable: None,
+                            item: None,
+                        })
+                    }
+                }
+            }
             commands::legal_commands::Intent::USE => println!("use"),
             _ => println!("You didn't choose an appropriate command"),
         }
@@ -341,4 +363,6 @@ fn main() {
 
         println!("{:?}", parsed_input);
     }
+
+    println!("printing command outside {:?}", command);
 }
