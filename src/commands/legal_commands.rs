@@ -1,6 +1,6 @@
 use phf::phf_map;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Intent {
     MOVEMENT,
     USE,
@@ -30,6 +30,7 @@ pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
     "go" => Intent::MOVEMENT,
     "move" => Intent::MOVEMENT,
     "run" => Intent::MOVEMENT,
+    "walk" => Intent::MOVEMENT,
     "jump" => Intent::ELEVATE,
     "climb" => Intent::ELEVATE,
 };
