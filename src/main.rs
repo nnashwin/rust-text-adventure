@@ -1,21 +1,54 @@
 use std::collections::HashMap;
 use std::io;
 
+extern crate phf;
+
 use phf::phf_map;
 
+#[macro_use]
+extern crate lazy_static;
+
 mod commands;
+
+lazy_static! {
+    static ref INVENTORY: HashMap<&'static str, Item> = {
+        let mut map = HashMap::new();
+
+        map.insert(
+            "helmet",
+            Item {
+                name: "helmet".to_string(),
+                description: "A blue helmet covered in dirt".to_string(),
+                weight: 30,
+                location: ItemState::Room,
+            },
+        );
+
+        map.insert(
+            "buster",
+            Item {
+                name: "buster".to_string(),
+                description: "A large cannon with four buttons".to_string(),
+                weight: 20,
+                location: ItemState::Room,
+            },
+        );
+
+        map
+    };
+}
 
 #[derive(Debug)]
 struct Command {
     intent: commands::legal_commands::Intent,
-    target_room: Option<i32>,
+    target_room: Option<usize>,
     item: Option<Item>,
     interactable: Option<Interactable>,
 }
 
 fn check_command_optional(optional: Option<Command>) -> bool {
     match optional {
-        Some(command) => true,
+        Some(_command) => true,
         None => false,
     }
 }
@@ -69,7 +102,7 @@ fn is_obj_noun<'a>(word: &'a str, item_map: &HashMap<String, Item>) -> bool {
 #[derive(Debug)]
 struct Exit {
     direction: Direction,
-    target: i32,
+    target: usize,
     locked: bool,
     key: String,
 }
@@ -126,31 +159,8 @@ enum ItemState {
 struct Item {
     name: String,
     description: String,
-    weight: i32,
+    weight: usize,
     location: ItemState,
-}
-
-fn get_item_vec() -> Vec<(String, Item)> {
-    return vec![
-        (
-            "helmet".to_string(),
-            Item {
-                name: "helmet".to_string(),
-                description: "A blue helmet covered in dirt".to_string(),
-                weight: 30,
-                location: ItemState::Room,
-            },
-        ),
-        (
-            "buster".to_string(),
-            Item {
-                name: "buster".to_string(),
-                description: "A large cannon with four buttons".to_string(),
-                weight: 20,
-                location: ItemState::Room,
-            },
-        ),
-    ];
 }
 
 impl Item {
@@ -179,8 +189,14 @@ impl Item {
 struct Room {
     description: String,
     interactables: Vec<Interactable>,
-    items: Vec<Item>,
+    items: Vec<&'static str>,
     exits: Vec<Exit>,
+}
+
+impl Room {
+    fn is_escape(&self) -> bool {
+        self.exits.len() == 0
+    }
 }
 
 fn main() {
@@ -205,7 +221,7 @@ fn main() {
                 items: vec![],
             },
             Room {
-                description: "You find yourself in a room. There is a door to the west and a door to the south.".to_string(),
+                description: "You find yourself in a room. There is a door to the west and a door to the south. You notice a small crevice in the corner.  The room with the helmet".to_string(),
                 exits: vec![
                     Exit {
                         direction: Direction::W,
@@ -221,7 +237,7 @@ fn main() {
                     },
                 ],
                 interactables: vec![],
-                items: vec![],
+                items: vec!["helmet"],
             },
             Room {
                 description: "You find yourself in a room. There is a door to the north. A key is here.".to_string(),
@@ -248,7 +264,7 @@ fn main() {
                     Exit {
                         direction: Direction::S,
                         target: 4,
-                        locked: true,
+                        locked: false,
                         key: String::from(""),
                     },
                 ],
@@ -262,21 +278,25 @@ fn main() {
                 items: vec![],
     }
         ];
-    let mut movement: Option<String> = None;
+    let mut current_room = 0;
+
+    while !rooms[current_room].is_escape() {
+        current_room = enter(rooms.get_mut(current_room).unwrap()).unwrap_or(current_room);
+    }
+
+    println!("You have escaped the ruins.  Consider yourself lucky");
+}
+
+fn enter(room: &mut Room) -> Option<usize> {
+    println!("{}", room.description);
+    println!("\nWhat do you do?\n");
+
     let mut command: Option<Command> = None;
-    let mut current_room = rooms.first();
     let mut parsed_input = Input {
         ..Default::default()
     };
 
-    let item_vec = get_item_vec();
-    let inventory_map: HashMap<_, _> = item_vec.into_iter().collect();
-    let player_inventory: HashMap<String, Item> = HashMap::new();
-
     while let None = command {
-        println!("{}", current_room.unwrap().description);
-        println!("\nWhat do you do?\n");
-
         let mut input = String::new();
 
         io::stdin()
@@ -298,6 +318,7 @@ fn main() {
 
         for word in user_input {
             let lowercase_word = word.to_lowercase();
+            println!("lowercase_word: {}", lowercase_word);
             if parsed_input.object_noun == "" {
                 if is_direction(lowercase_word.as_str()) {
                     parsed_input.object_noun = lowercase_word;
@@ -305,18 +326,13 @@ fn main() {
                     continue;
                 }
 
-                if inventory_map.contains_key(lowercase_word.as_str()) {
+                if INVENTORY.contains_key(lowercase_word.as_str()) {
                     parsed_input.object_noun = lowercase_word;
                     parsed_input.is_item = true;
                     continue;
                 }
 
-                if current_room
-                    .unwrap()
-                    .interactables
-                    .iter()
-                    .any(|x| x.name == lowercase_word)
-                {
+                if room.interactables.iter().any(|x| x.name == lowercase_word) {
                     parsed_input.object_noun = lowercase_word;
                     parsed_input.is_interactable = true;
                     continue;
@@ -324,22 +340,17 @@ fn main() {
             }
         }
 
-        println!("{:?}", parsed_input);
-
-        // TAKE APPROPRIATE ACTIONS
         match parsed_input.intent {
             commands::legal_commands::Intent::ATTACK => println!("attack"),
             commands::legal_commands::Intent::CHARGE => println!("charge"),
             commands::legal_commands::Intent::ELEVATE => println!("elevate"),
-            commands::legal_commands::Intent::INTERACT => println!("interact"),
+            commands::legal_commands::Intent::INTERACT => {
+                println!("{:?}", parsed_input);
+            }
             commands::legal_commands::Intent::MOVEMENT => {
                 let direction: Direction = text_to_direction(&parsed_input.object_noun).unwrap();
 
-                let exit: Option<&Exit> = current_room
-                    .unwrap()
-                    .exits
-                    .iter()
-                    .find(|&x| x.direction == direction);
+                let exit: Option<&Exit> = room.exits.iter().find(|&x| x.direction == direction);
 
                 // Print out incorrect direction
                 if parsed_input.is_direction {
@@ -360,9 +371,13 @@ fn main() {
         }
 
         parsed_input.reset_input();
-
-        println!("{:?}", parsed_input);
     }
 
-    println!("printing command outside {:?}", command);
+    let unwrapped_command = command.unwrap();
+    let is_movement = unwrapped_command.intent == commands::legal_commands::Intent::MOVEMENT;
+
+    match is_movement {
+        true => unwrapped_command.target_room,
+        _ => None,
+    }
 }
