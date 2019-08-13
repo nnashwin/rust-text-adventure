@@ -32,3 +32,8 @@ Inside of the rust-phf/phf directory you need to run `cargo build` to build the 
 
 After these steps, return too your rust-text-adventure directory and `cargo run` should work correctly.
 
+## Some Design Decisions
+The following are some engine design decisions I made:
+```
+TODO Add Design Decisions
+```
