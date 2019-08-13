@@ -5,37 +5,32 @@ extern crate phf;
 
 use phf::phf_map;
 
-#[macro_use]
-extern crate lazy_static;
-
 mod commands;
 
-lazy_static! {
-    static ref INVENTORY: HashMap<&'static str, Item> = {
-        let mut map = HashMap::new();
+fn create_inventory() -> HashMap<&'static str, Item> {
+    let mut map = HashMap::new();
 
-        map.insert(
-            "helmet",
-            Item {
-                name: "helmet".to_string(),
-                description: "A blue helmet covered in dirt".to_string(),
-                weight: 30,
-                location: ItemState::Room,
-            },
-        );
+    map.insert(
+        "helmet",
+        Item {
+            name: "helmet".to_string(),
+            description: "A blue helmet covered in dirt".to_string(),
+            weight: 30,
+            location: ItemState::Room,
+        },
+    );
 
-        map.insert(
-            "buster",
-            Item {
-                name: "buster".to_string(),
-                description: "A large cannon with four buttons".to_string(),
-                weight: 20,
-                location: ItemState::Room,
-            },
-        );
+    map.insert(
+        "buster",
+        Item {
+            name: "buster".to_string(),
+            description: "A large cannon with four buttons".to_string(),
+            weight: 20,
+            location: ItemState::Room,
+        },
+    );
 
-        map
-    };
+    map
 }
 
 #[derive(Debug)]
@@ -280,14 +275,17 @@ fn main() {
         ];
     let mut current_room = 0;
 
+    let mut INVENTORY = create_inventory();
+
     while !rooms[current_room].is_escape() {
-        current_room = enter(rooms.get_mut(current_room).unwrap()).unwrap_or(current_room);
+        current_room =
+            enter(&mut INVENTORY, rooms.get_mut(current_room).unwrap()).unwrap_or(current_room);
     }
 
     println!("You have escaped the ruins.  Consider yourself lucky");
 }
 
-fn enter(room: &mut Room) -> Option<usize> {
+fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option<usize> {
     println!("{}", room.description);
     println!("\nWhat do you do?\n");
 
@@ -346,6 +344,10 @@ fn enter(room: &mut Room) -> Option<usize> {
             commands::legal_commands::Intent::ELEVATE => println!("elevate"),
             commands::legal_commands::Intent::INTERACT => {
                 println!("{:?}", parsed_input);
+
+                // command = if parsed_input.is_item {
+                //     INVENTORY
+                // }
             }
             commands::legal_commands::Intent::MOVEMENT => {
                 let direction: Direction = text_to_direction(&parsed_input.object_noun).unwrap();
