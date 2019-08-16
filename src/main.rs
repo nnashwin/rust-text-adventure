@@ -235,7 +235,7 @@ fn main() {
                 items: vec!["helmet"],
             },
             Room {
-                description: "You find yourself in a room. There is a door to the north. A key is here.".to_string(),
+                description: "You find yourself in a room. There is a door to the north".to_string(),
                 exits: vec![
                     Exit {
                         direction: Direction::N,
@@ -343,11 +343,12 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
             commands::legal_commands::Intent::CHARGE => println!("charge"),
             commands::legal_commands::Intent::ELEVATE => println!("elevate"),
             commands::legal_commands::Intent::INTERACT => {
-                println!("{:?}", parsed_input);
-
-                // command = if parsed_input.is_item {
-                //     INVENTORY
-                // }
+                let key = &parsed_input.object_noun;
+                if parsed_input.is_item {
+                    if INVENTORY.contains_key::<str>(key) {
+                        INVENTORY.get_mut::<str>(key).unwrap().to_inventory();
+                    }
+                }
             }
             commands::legal_commands::Intent::MOVEMENT => {
                 let direction: Direction = text_to_direction(&parsed_input.object_noun).unwrap();
