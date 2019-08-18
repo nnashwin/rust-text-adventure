@@ -2,13 +2,15 @@ use phf::phf_map;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Intent {
-    MOVEMENT,
-    USE,
     ATTACK,
-    EQUIP,
     CHARGE,
     ELEVATE,
+    EQUIP,
+    EXAMINE,
+    INVENTORY,
     INTERACT,
+    MOVEMENT,
+    USE,
     NONE,
 }
 
@@ -26,8 +28,11 @@ pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
     "attack" => Intent::ATTACK,
     "charge" => Intent::CHARGE,
     "equip" => Intent::EQUIP,
-    "pickup" => Intent::EQUIP,
-    "grab" => Intent::INTERACT,
+    "examine" => INTENT::EXAMINE,
+    "pickup" => Intent::INVENTORY,
+    "take" => Intent::INVENTORY,
+    "grab" => Intent::INVENTORY,
+    "push" => Intent::INTERACT,
     "touch" => Intent::INTERACT,
     "exit" => Intent::MOVEMENT,
     "go" => Intent::MOVEMENT,
