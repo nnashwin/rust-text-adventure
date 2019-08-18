@@ -1,9 +1,8 @@
 use std::collections::HashMap;
 use std::io;
 
-extern crate phf;
-
-use phf::phf_map;
+pub mod direction;
+use direction::*;
 
 mod commands;
 
@@ -35,7 +34,7 @@ fn create_inventory() -> HashMap<&'static str, Item> {
 
 #[derive(Debug)]
 struct Command {
-    intent: commands::legal_commands::Intent,
+    intent: commands::Intent,
     target_room: Option<usize>,
     item: Option<Item>,
     interactable: Option<Interactable>,
@@ -48,46 +47,8 @@ fn check_command_optional(optional: Option<Command>) -> bool {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-enum Direction {
-    N,
-    S,
-    E,
-    W,
-    NE,
-    NW,
-    SE,
-    SW,
-    NONE,
-}
-
-impl Default for Direction {
-    fn default() -> Self {
-        Direction::NONE
-    }
-}
-
-static DIRECTION_MAPPINGS: phf::Map<&'static str, Direction> = phf_map! {
-    "north" => Direction::N,
-    "south" => Direction::S,
-    "east" => Direction::E,
-    "west" => Direction::W,
-    "northeast" => Direction::NE,
-    "northwest" => Direction::NW,
-    "southeast" => Direction::SE,
-    "southwest" => Direction::SW,
-};
-
-fn text_to_direction(text: &str) -> Option<Direction> {
-    DIRECTION_MAPPINGS.get(text).cloned()
-}
-
-fn is_direction(direction: &str) -> bool {
-    DIRECTION_MAPPINGS.contains_key(direction)
-}
-
 fn is_legal_command(command: &str) -> bool {
-    commands::legal_commands::LEGAL_COMMANDS.contains_key(command)
+    commands::LEGAL_COMMANDS.contains_key(command)
 }
 
 fn is_obj_noun<'a>(word: &'a str, item_map: &HashMap<String, Item>) -> bool {
@@ -110,7 +71,7 @@ impl Exit {
 
 #[derive(Debug, Default)]
 struct Input {
-    intent: commands::legal_commands::Intent,
+    intent: commands::Intent,
     is_direction: bool,
     is_interactable: bool,
     is_item: bool,
@@ -119,7 +80,7 @@ struct Input {
 
 impl Input {
     fn reset_input(&mut self) {
-        self.intent = commands::legal_commands::Intent::NONE;
+        self.intent = commands::Intent::NONE;
         self.object_noun = "".to_string();
         self.is_interactable = false;
         self.is_item = false;
@@ -312,7 +273,7 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
             continue;
         };
 
-        parsed_input.intent = commands::legal_commands::parse_command(first_command).unwrap();
+        parsed_input.intent = commands::parse_command(first_command).unwrap();
 
         for word in user_input {
             let lowercase_word = word.to_lowercase();
@@ -339,18 +300,20 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
         }
 
         match parsed_input.intent {
-            commands::legal_commands::Intent::ATTACK => println!("attack"),
-            commands::legal_commands::Intent::CHARGE => println!("charge"),
-            commands::legal_commands::Intent::ELEVATE => println!("elevate"),
-            commands::legal_commands::Intent::INTERACT => {
+            commands::Intent::ATTACK => println!("attack"),
+            commands::Intent::CHARGE => println!("charge"),
+            commands::Intent::ELEVATE => println!("elevate"),
+            commands::Intent::EXAMINE => {
+                println!("examine");
+            }
+            commands::Intent::INTERACT => println!("interact"),
+            commands::Intent::INVENTORY => {
                 let key = &parsed_input.object_noun;
                 if parsed_input.is_item {
-                    if INVENTORY.contains_key::<str>(key) {
-                        INVENTORY.get_mut::<str>(key).unwrap().to_inventory();
-                    }
+                    INVENTORY.get_mut::<str>(key).unwrap().to_inventory();
                 }
             }
-            commands::legal_commands::Intent::MOVEMENT => {
+            commands::Intent::MOVEMENT => {
                 let direction: Direction = text_to_direction(&parsed_input.object_noun).unwrap();
 
                 let exit: Option<&Exit> = room.exits.iter().find(|&x| x.direction == direction);
@@ -361,7 +324,7 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
                         println!("There is no exit leaving {}", parsed_input.object_noun);
                     } else if parsed_input.is_direction && exit.is_some() {
                         command = Some(Command {
-                            intent: commands::legal_commands::Intent::MOVEMENT,
+                            intent: commands::Intent::MOVEMENT,
                             target_room: Some(exit.unwrap().target),
                             interactable: None,
                             item: None,
@@ -369,7 +332,7 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
                     }
                 }
             }
-            commands::legal_commands::Intent::USE => println!("use"),
+            commands::Intent::USE => println!("use"),
             _ => println!("You didn't choose an appropriate command"),
         }
 
@@ -377,7 +340,7 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
     }
 
     let unwrapped_command = command.unwrap();
-    let is_movement = unwrapped_command.intent == commands::legal_commands::Intent::MOVEMENT;
+    let is_movement = unwrapped_command.intent == commands::Intent::MOVEMENT;
 
     match is_movement {
         true => unwrapped_command.target_room,
