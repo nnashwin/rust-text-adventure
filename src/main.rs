@@ -55,6 +55,10 @@ fn is_obj_noun<'a>(word: &'a str, item_map: &HashMap<String, Item>) -> bool {
     return item_map.contains_key(word);
 }
 
+trait Examine {
+    fn examine(&self) -> &'static str;
+}
+
 #[derive(Debug)]
 struct Exit {
     direction: Direction,
@@ -90,16 +94,23 @@ impl Input {
 #[derive(Debug)]
 struct Interactable {
     name: String,
-    before_interaction_description: String,
-    after_interaction_description: String,
+    before_interaction_description: &'static str,
+    after_interaction_description: &'static str,
     interacted: bool,
 }
 
 impl Interactable {
-    fn get_description(&self) -> &String {
-        match self.interacted {
-            true => &self.before_interaction_description,
-            false => &self.after_interaction_description,
+    fn interact(&mut self) {
+        self.interacted = true
+    }
+}
+
+impl Examine for Interactable {
+    fn examine(&self) -> &'static str {
+        if self.interacted {
+            self.after_interaction_description
+        } else {
+            self.before_interaction_description
         }
     }
 }
@@ -158,7 +169,7 @@ impl Room {
 fn main() {
     let mut rooms = vec![
             Room {
-                description: "You find yourself in a room. There is a door to the south and a door to the east.".to_string(),
+                description: "You find yourself in a room. There is a door to the south and a door to the east. A stone sits in the far corner of the room to your west".to_string(),
                 exits: vec![
                     Exit {
                         direction: Direction::S,
@@ -173,7 +184,7 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
-                interactables: vec![Interactable{name: "stone".to_string(), before_interaction_description: "You see a stone sitting in between two logs".to_string(), after_interaction_description: "The stone rolls onto the floor".to_string(), interacted: false}],
+                interactables: vec![Interactable{name: "stone".to_string(), before_interaction_description: "You see a stone sitting in between two logs", after_interaction_description: "The stone rolls onto the floor", interacted: false}],
                 items: vec![],
             },
             Room {
@@ -265,7 +276,6 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
 
         let mut user_input = input.split_whitespace().peekable();
 
-        // PARSE USER INPUT
         let first_command = user_input.next().unwrap();
 
         if !is_legal_command(first_command) {
@@ -277,7 +287,6 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
 
         for word in user_input {
             let lowercase_word = word.to_lowercase();
-            println!("lowercase_word: {}", lowercase_word);
             if parsed_input.object_noun == "" {
                 if is_direction(lowercase_word.as_str()) {
                     parsed_input.object_noun = lowercase_word;
@@ -304,9 +313,30 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
             commands::Intent::CHARGE => println!("charge"),
             commands::Intent::ELEVATE => println!("elevate"),
             commands::Intent::EXAMINE => {
-                println!("examine");
+                if parsed_input.is_interactable {
+                    let desc = room
+                        .interactables
+                        .iter()
+                        .find(|x| x.name == parsed_input.object_noun)
+                        .unwrap()
+                        .examine();
+
+                    println!("{}", desc);
+                } else if parsed_input.is_item {
+                    println!("is item");
+                }
             }
-            commands::Intent::INTERACT => println!("interact"),
+            commands::Intent::INTERACT => {
+                if parsed_input.is_interactable {
+                    let interactable = room
+                        .interactables
+                        .iter()
+                        .find(|x| x.name == parsed_input.object_noun)
+                        .unwrap();
+
+                    println!("{:?}", interactable);
+                }
+            }
             commands::Intent::INVENTORY => {
                 let key = &parsed_input.object_noun;
                 if parsed_input.is_item {
@@ -314,12 +344,12 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
                 }
             }
             commands::Intent::MOVEMENT => {
-                let direction: Direction = text_to_direction(&parsed_input.object_noun).unwrap();
-
-                let exit: Option<&Exit> = room.exits.iter().find(|&x| x.direction == direction);
-
-                // Print out incorrect direction
                 if parsed_input.is_direction {
+                    let direction: Direction =
+                        text_to_direction(&parsed_input.object_noun).unwrap();
+
+                    let exit: Option<&Exit> = room.exits.iter().find(|&x| x.direction == direction);
+
                     if exit.is_none() {
                         println!("There is no exit leaving {}", parsed_input.object_noun);
                     } else if parsed_input.is_direction && exit.is_some() {
@@ -330,6 +360,8 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
                             item: None,
                         })
                     }
+                } else {
+                    println!("You can not move to {}", parsed_input.object_noun);
                 }
             }
             commands::Intent::USE => println!("use"),
@@ -345,5 +377,24 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
     match is_movement {
         true => unwrapped_command.target_room,
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_interact() {
+        let new_inter = &mut Interactable {
+            name: "stone".to_string(),
+            before_interaction_description: "You see a stone sitting in between two logs",
+            after_interaction_description: "The stone rolls onto the floor",
+            interacted: false,
+        };
+        assert_eq!(new_inter.interacted, false);
+        new_inter.interact();
+
+        assert_eq!(new_inter.interacted, true);
     }
 }
