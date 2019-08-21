@@ -13,7 +13,7 @@ fn create_inventory() -> HashMap<&'static str, Item> {
         "helmet",
         Item {
             name: "helmet".to_string(),
-            description: "A blue helmet covered in dirt".to_string(),
+            description: "a blue helmet covered in dirt".to_string(),
             weight: 30,
             location: ItemState::Room,
         },
@@ -314,16 +314,20 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
             commands::Intent::ELEVATE => println!("elevate"),
             commands::Intent::EXAMINE => {
                 if parsed_input.is_interactable {
-                    let desc = room
+                    let description = room
                         .interactables
                         .iter()
                         .find(|x| x.name == parsed_input.object_noun)
                         .unwrap()
                         .examine();
 
-                    println!("{}", desc);
+                    println!("{}", description);
                 } else if parsed_input.is_item {
-                    println!("is item");
+                    let description = &INVENTORY
+                        .get::<str>(&parsed_input.object_noun)
+                        .unwrap()
+                        .description;
+                    println!("You see a {}", description);
                 }
             }
             commands::Intent::INTERACT => {
