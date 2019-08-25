@@ -1,36 +1,14 @@
 use std::collections::HashMap;
 use std::io;
 
-pub mod direction;
-use direction::*;
-
 mod commands;
+mod direction;
+mod examine;
+mod item;
 
-fn create_inventory() -> HashMap<&'static str, Item> {
-    let mut map = HashMap::new();
-
-    map.insert(
-        "helmet",
-        Item {
-            name: "helmet".to_string(),
-            description: "a blue helmet covered in dirt".to_string(),
-            weight: 30,
-            location: ItemState::Room,
-        },
-    );
-
-    map.insert(
-        "buster",
-        Item {
-            name: "buster".to_string(),
-            description: "A large cannon with four buttons".to_string(),
-            weight: 20,
-            location: ItemState::Room,
-        },
-    );
-
-    map
-}
+use direction::*;
+use examine::*;
+use item::*;
 
 #[derive(Debug)]
 struct Command {
@@ -49,14 +27,6 @@ fn check_command_optional(optional: Option<Command>) -> bool {
 
 fn is_legal_command(command: &str) -> bool {
     commands::LEGAL_COMMANDS.contains_key(command)
-}
-
-fn is_obj_noun<'a>(word: &'a str, item_map: &HashMap<String, Item>) -> bool {
-    return item_map.contains_key(word);
-}
-
-trait Examine {
-    fn examine(&self) -> &'static str;
 }
 
 #[derive(Debug)]
@@ -111,43 +81,6 @@ impl Examine for Interactable {
             self.after_interaction_description
         } else {
             self.before_interaction_description
-        }
-    }
-}
-
-#[derive(Debug)]
-enum ItemState {
-    Room,
-    Inventory,
-    Equipped,
-}
-
-#[derive(Debug)]
-struct Item {
-    name: String,
-    description: String,
-    weight: usize,
-    location: ItemState,
-}
-
-impl Item {
-    fn to_inventory(&mut self) {
-        self.location = match self.location {
-            _ => ItemState::Inventory,
-        }
-    }
-
-    fn equip(&mut self) {
-        self.location = match self.location {
-            ItemState::Room => ItemState::Room,
-            _ => ItemState::Equipped,
-        }
-    }
-
-    fn unequip(&mut self) {
-        self.location = match self.location {
-            ItemState::Room => ItemState::Room,
-            _ => ItemState::Inventory,
         }
     }
 }
@@ -326,7 +259,7 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
                     let description = &INVENTORY
                         .get::<str>(&parsed_input.object_noun)
                         .unwrap()
-                        .description;
+                        .get_description();
                     println!("You see a {}", description);
                 }
             }
