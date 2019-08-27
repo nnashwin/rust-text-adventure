@@ -9,6 +9,7 @@ pub enum Intent {
     EXAMINE,
     INVENTORY,
     INTERACT,
+    LIST_INVENTORY,
     MOVEMENT,
     USE,
     NONE,
@@ -41,6 +42,8 @@ pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
     "walk" => Intent::MOVEMENT,
     "jump" => Intent::ELEVATE,
     "climb" => Intent::ELEVATE,
+    "show" => Intent::LIST_INVENTORY,
+    "list" => Intent::LIST_INVENTORY,
 };
 
 pub fn parse_command(command: &str) -> Option<Intent> {

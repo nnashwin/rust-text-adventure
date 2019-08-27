@@ -221,6 +221,11 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
         for word in user_input {
             let lowercase_word = word.to_lowercase();
             if parsed_input.object_noun == "" {
+                if lowercase_word == "inventory" {
+                    parsed_input.object_noun = lowercase_word;
+                    continue;
+                }
+
                 if is_direction(lowercase_word.as_str()) {
                     parsed_input.object_noun = lowercase_word;
                     parsed_input.is_direction = true;
@@ -278,6 +283,14 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
                 let key = &parsed_input.object_noun;
                 if parsed_input.is_item {
                     INVENTORY.get_mut::<str>(key).unwrap().to_inventory();
+                }
+            }
+            commands::Intent::LIST_INVENTORY => {
+                println!("Your Inventory:\n");
+                for item in INVENTORY.values() {
+                    if item.get_location() == &item::ItemState::Equipped {
+                        println!("{}: {}\n", item.get_name(), item.get_description());
+                    }
                 }
             }
             commands::Intent::MOVEMENT => {
