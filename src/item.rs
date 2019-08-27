@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-#[derive(Debug)]
-enum ItemState {
+#[derive(Debug, PartialEq, Eq)]
+pub enum ItemState {
     Room,
     Inventory,
     Equipped,
@@ -18,6 +18,14 @@ pub struct Item {
 impl Item {
     pub fn get_description(&self) -> &str {
         &self.description
+    }
+
+    pub fn get_location(&self) -> &ItemState {
+        &self.location
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.name
     }
 
     pub fn equip(&mut self) {
@@ -83,5 +91,64 @@ mod tests {
         };
 
         assert_eq!(new_item.get_description(), expected);
+    }
+
+    #[test]
+    fn test_get_name() {
+        let expected = "test name".to_string();
+
+        let new_item = Item {
+            name: expected.clone(),
+            description: "test desc".to_string(),
+            weight: 30,
+            location: ItemState::Room,
+        };
+
+        assert_eq!(new_item.get_name(), expected);
+    }
+
+    #[test]
+    fn test_get_location() {
+        let expected = ItemState::Room;
+
+        let new_item = Item {
+            name: "test".to_string(),
+            description: "test desc".to_string(),
+            weight: 30,
+            location: ItemState::Room,
+        };
+
+        assert_eq!(new_item.get_location(), &expected);
+    }
+
+    #[test]
+    fn test_equip() {
+        let expected = ItemState::Equipped;
+
+        let new_item = &mut Item {
+            name: "test".to_string(),
+            description: "test desc".to_string(),
+            weight: 30,
+            location: ItemState::Inventory,
+        };
+
+        new_item.equip();
+
+        assert_eq!(new_item.get_location(), &expected);
+    }
+
+    fn test_equip_negative() {
+        let expected = ItemState::Room;
+
+        let new_item = &mut Item {
+            name: "test".to_string(),
+            description: "test desc".to_string(),
+            weight: 30,
+            location: ItemState::Room,
+        };
+
+        new_item.equip();
+
+        assert_eq!(new_item.get_location(), &expected);
     }
 }
