@@ -274,7 +274,7 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
                     for i in 0..room.interactables.len() {
                         if room.interactables[i].name == parsed_input.object_noun {
                             room.interactables[i].interact();
-                            println!("{}", room.interactables[i].after_interaction_description);
+                            println!("{}", room.interactables[i].interaction_description);
                             continue;
                         }
                     }
