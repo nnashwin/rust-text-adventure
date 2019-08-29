@@ -64,6 +64,7 @@ impl Input {
 #[derive(Debug)]
 struct Interactable {
     name: String,
+    interaction_description: &'static str,
     before_interaction_description: &'static str,
     after_interaction_description: &'static str,
     interacted: bool,
@@ -117,7 +118,7 @@ fn main() {
                         key: String::from(""),
                     },
                 ],
-                interactables: vec![Interactable{name: "stone".to_string(), before_interaction_description: "You see a stone sitting in between two logs", after_interaction_description: "The stone rolls onto the floor", interacted: false}],
+                interactables: vec![Interactable{name: "stone".to_string(), interaction_description: "The stone falls to the floor", before_interaction_description: "You see a stone sitting in between two logs", after_interaction_description: "The stone rolled onto the floor and has revealed a secret passageway.", interacted: false}],
                 items: vec![],
             },
             Room {
@@ -270,13 +271,13 @@ fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option
             }
             commands::Intent::INTERACT => {
                 if parsed_input.is_interactable {
-                    let interactable = room
-                        .interactables
-                        .iter()
-                        .find(|x| x.name == parsed_input.object_noun)
-                        .unwrap();
-
-                    println!("{:?}", interactable);
+                    for i in 0..room.interactables.len() {
+                        if room.interactables[i].name == parsed_input.object_noun {
+                            room.interactables[i].interact();
+                            println!("{}", room.interactables[i].interaction_description);
+                            continue;
+                        }
+                    }
                 }
             }
             commands::Intent::INVENTORY => {
@@ -338,8 +339,9 @@ mod tests {
     fn test_interact() {
         let new_inter = &mut Interactable {
             name: "stone".to_string(),
+            interaction_description: "The stone rolls onto the floor",
             before_interaction_description: "You see a stone sitting in between two logs",
-            after_interaction_description: "The stone rolls onto the floor",
+            after_interaction_description: "The stone is sitting on the floor",
             interacted: false,
         };
         assert_eq!(new_inter.interacted, false);
