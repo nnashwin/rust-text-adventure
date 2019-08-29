@@ -1,6 +1,6 @@
 language: rust
 script:
-    - git clone https://github.com/sfackler/rust-phf.git ../
+    - git clone https://github.com/sfackler/rust-phf.git ../rust-phf
     - pushd ../rust-phf/phf
     - cargo build --verbose
     - popd
