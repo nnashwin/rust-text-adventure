@@ -339,8 +339,9 @@ mod tests {
     fn test_interact() {
         let new_inter = &mut Interactable {
             name: "stone".to_string(),
+            interaction_description: "The stone rolls onto the floor",
             before_interaction_description: "You see a stone sitting in between two logs",
-            after_interaction_description: "The stone rolls onto the floor",
+            after_interaction_description: "The stone is sitting on the floor",
             interacted: false,
         };
         assert_eq!(new_inter.interacted, false);
