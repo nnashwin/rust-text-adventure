@@ -1,0 +1,8 @@
+language: rust
+script:
+    - git clone https://github.com/sfackler/rust-phf.git ../rust-phf
+    - pushd ../rust-phf/phf
+    - cargo build --verbose
+    - popd
+    - cargo build --verbose --all
+    - cargo test --verbose --all
