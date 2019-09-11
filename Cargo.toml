@@ -7,3 +7,6 @@ edition = "2018"
 [dependencies]
 lazy_static = "0.1.*"
 phf = { version = "0.7.24", features = ["macros"], path="../rust-phf/phf" }
+serde = "1"
+serde_derive = "1"
+yew = "0.7"
