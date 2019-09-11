@@ -1,14 +1,6 @@
-#![recursion_limit = "512"]
-
 use serde_derive::{Deserialize, Serialize};
 use yew::events::IKeyboardEvent;
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
-
-pub enum Author {
-    User,
-    System,
-    Dialogue,
-}
 
 #[derive(Serialize, Deserialize)]
 struct Entry {
