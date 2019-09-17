@@ -1,6 +1,8 @@
 use serde_derive::{Deserialize, Serialize};
 use yew::events::IKeyboardEvent;
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
+#[path = "engine/engine.rs"]
+mod engine;
 
 #[derive(Serialize, Deserialize)]
 struct Entry {
