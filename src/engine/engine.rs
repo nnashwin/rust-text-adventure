@@ -108,6 +108,10 @@ impl Room {
     }
 }
 
+pub fn take_input(input: String) -> String {
+    input.to_owned()
+}
+
 fn main() {
     let mut rooms = vec![
             Room {

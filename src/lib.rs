@@ -1,3 +1,5 @@
+#![recursion_limit = "512"]
+
 use serde_derive::{Deserialize, Serialize};
 use yew::events::IKeyboardEvent;
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
@@ -48,6 +50,8 @@ impl Component for Model {
                 };
 
                 self.state.entries.push(entry);
+                // TODO: Add logic to spit back output from the engine
+                // self.state.value = engine::take_input(self.state.value.clone());
                 self.state.value = "".to_string();
             }
             Msg::Update(val) => {
@@ -66,8 +70,9 @@ impl Renderable<Model> for Model {
             <div class="webapp-wrapper">
                 { self.view_input() }
 
-                <div class="display">
-                    { &self.state.value }
+                <div>
+                    <div>{ "Entries" }</div>
+                    <div>{ for self.state.entries.iter().enumerate().map(view_entry) }</div>
                 </div>
             </div>
         }
@@ -88,4 +93,8 @@ impl Model {
     }
 }
 
-impl Model {}
+fn view_entry((idx, entry): (usize, &Entry)) -> Html<Model> {
+    html! {
+        <div>{ &entry.text }</div>
+    }
+}
