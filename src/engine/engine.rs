@@ -51,6 +51,13 @@ impl Exit {
     }
 }
 
+#[derive(Debug)]
+pub struct GameState {
+    current_room: usize,
+    rooms: Vec<Room>,
+    inventory: HashMap<&'static str, Item>,
+}
+
 #[derive(Debug, Default)]
 struct Input {
     intent: Intent,
@@ -95,7 +102,7 @@ impl Examine for Interactable {
 }
 
 #[derive(Debug)]
-struct Room {
+pub struct Room {
     description: String,
     interactables: Vec<Interactable>,
     items: Vec<&'static str>,
@@ -112,7 +119,7 @@ pub fn take_input(input: String) -> String {
     input.to_owned()
 }
 
-fn main() {
+pub fn start_game() -> GameState {
     let mut rooms = vec![
             Room {
                 description: "You find yourself in a room. There is a door to the south and a door to the east. A stone sits in the far corner of the room to your west".to_string(),
@@ -195,12 +202,16 @@ fn main() {
 
     let mut INVENTORY = create_inventory();
 
-    while !rooms[current_room].is_escape() {
-        current_room =
-            enter(&mut INVENTORY, rooms.get_mut(current_room).unwrap()).unwrap_or(current_room);
-    }
+    // while !rooms[current_room].is_escape() {
+    //     current_room =
+    //         enter(&mut INVENTORY, rooms.get_mut(current_room).unwrap()).unwrap_or(current_room);
+    // }
 
-    println!("You have escaped the ruins.  Consider yourself lucky");
+    return GameState {
+        current_room: 0,
+        inventory: create_inventory(),
+        rooms: rooms,
+    };
 }
 
 fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option<usize> {
