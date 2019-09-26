@@ -1,3 +1,4 @@
+extern crate phf;
 use phf::phf_map;
 
 #[derive(Clone, Debug, PartialEq)]
