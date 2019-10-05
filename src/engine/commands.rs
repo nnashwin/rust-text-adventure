@@ -48,6 +48,10 @@ pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
     "use" => Intent::USE,
 };
 
-pub fn parse_command(command: &str) -> Option<Intent> {
+pub fn determine_intent(command: &str) -> Option<Intent> {
     LEGAL_COMMANDS.get(command).cloned()
+}
+
+pub fn is_legal_command(command: &str) -> bool {
+    LEGAL_COMMANDS.contains_key(command)
 }

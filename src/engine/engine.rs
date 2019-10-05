@@ -18,37 +18,12 @@ use direction::*;
 use examine::*;
 use item::*;
 
-#[derive(Debug)]
-struct Command {
-    intent: Intent,
-    target_room: Option<usize>,
-    item: Option<Item>,
-    interactable: Option<Interactable>,
-}
-
-fn check_command_optional(optional: Option<Command>) -> bool {
-    match optional {
-        Some(_command) => true,
-        None => false,
-    }
-}
-
-fn is_legal_command(command: &str) -> bool {
-    LEGAL_COMMANDS.contains_key(command)
-}
-
 #[derive(Clone, Debug)]
 struct Exit {
     direction: Direction,
     target: usize,
     locked: bool,
     key: String,
-}
-
-impl Exit {
-    fn can_go(&self, direction: &Direction) -> bool {
-        self.direction == *direction && !self.locked
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -66,15 +41,6 @@ struct Input {
     is_interactable: bool,
     is_item: bool,
     object_noun: String,
-}
-
-impl Input {
-    fn reset_input(&mut self) {
-        self.intent = Intent::NONE;
-        self.object_noun = "".to_string();
-        self.is_interactable = false;
-        self.is_item = false;
-    }
 }
 
 #[derive(Clone, Debug)]
@@ -215,7 +181,6 @@ pub fn update(mut prev_state: GameState, input: String) -> GameState {
     // println!("{}", prev_state.rooms.room.description);
     // println!("\nWhat do you do?\n");
 
-    let mut command: Option<Command> = None;
     let mut parsed_input = Input {
         ..Default::default()
     };
@@ -234,7 +199,7 @@ pub fn update(mut prev_state: GameState, input: String) -> GameState {
         return new_game_state;
     };
 
-    parsed_input.intent = parse_command(first_command).unwrap();
+    parsed_input.intent = determine_intent(first_command).unwrap();
 
     for word in user_input {
         let lowercase_word = word.to_lowercase();
