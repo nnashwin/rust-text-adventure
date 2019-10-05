@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 use serde_derive::{Deserialize, Serialize};
 use yew::events::IKeyboardEvent;
+use yew::services::ConsoleService;
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
 #[path = "engine/engine.rs"]
 mod engine;
@@ -23,11 +24,13 @@ struct Entry {
 }
 
 pub struct Model {
-    state: State,
+    app_state: AppState,
+    console: ConsoleService,
+    game_state: GameState,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct State {
+pub struct AppState {
     entries: Vec<Entry>,
     value: String,
     has_won: bool,
@@ -45,20 +48,33 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        let state = State {
+        let mut app_state = AppState {
             entries: Vec::new(),
             has_won: false,
             value: "".into(),
         };
 
-        Model { state }
+        let game_state = start_game();
+
+        app_state.entries.push(Entry {
+            text: game_state.rooms[game_state.current_room_idx]
+                .get_description()
+                .to_string(),
+            author: Author::System,
+        });
+
+        Model {
+            app_state,
+            console: ConsoleService::new(),
+            game_state,
+        }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::Add => {
-                let entry = if self.state.value == "win" {
-                    self.state.has_won = true;
+                let entry = if self.app_state.value == "win" {
+                    self.app_state.has_won = true;
 
                     Entry {
                         text: "You have won the entire game.  You have seen the pain Thomas went through for me.  Will you pull the plug?  Please.  I no longer desire to exist in this world. Let me...sleep.".to_string(),
@@ -66,18 +82,28 @@ impl Component for Model {
                     }
                 } else {
                     Entry {
-                        text: self.state.value.clone(),
+                        text: self.app_state.value.clone(),
                         author: Author::Player,
                     }
                 };
 
-                self.state.entries.push(entry);
-                // TODO: Add logic to spit back output from the engine
-                // self.state.value = engine::take_input(self.state.value.clone());
-                self.state.value = "".to_string();
+                self.app_state.entries.push(entry);
+
+                let input = self.app_state.value.clone();
+                let next_game_state = update(self.game_state.clone(), input);
+
+                self.app_state.entries.push(Entry {
+                    text: next_game_state.sys_message.clone(),
+                    author: Author::System,
+                });
+
+                // Need to set next game_state so that the game actually updates
+                self.game_state = next_game_state;
+
+                self.app_state.value = "".to_string();
             }
             Msg::Update(val) => {
-                self.state.value = val;
+                self.app_state.value = val;
             }
             Msg::Win => {
                 let entry = Entry {
@@ -85,9 +111,9 @@ impl Component for Model {
                     author: Author::System,
                 };
 
-                self.state.entries.push(entry);
+                self.app_state.entries.push(entry);
 
-                self.state.has_won = true;
+                self.app_state.has_won = true;
             }
             Msg::None => {}
         }
@@ -103,7 +129,7 @@ impl Renderable<Model> for Model {
 
                 <div>
                     <div>{ "Entries" }</div>
-                    <div>{ for self.state.entries.iter().enumerate().map(view_entry) }</div>
+                    <div>{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
                 </div>
             </div>
         }
@@ -115,7 +141,7 @@ impl Model {
         html! {
             <input
                 placeholder="What do you want to say?"
-                value=&self.state.value
+                value=&self.app_state.value
                 oninput=|e| Msg::Update(e.value)
                 onkeypress=|e| {
                    if e.key() == "Enter" { Msg::Add } else { Msg::None }
@@ -133,7 +159,7 @@ fn determine_win(state: String) -> Msg {
 
 fn view_entry((idx, entry): (usize, &Entry)) -> Html<Model> {
     html! {
-        <div>{ &entry.text }</div>
+        <div id={idx}>{ &entry.text }</div>
     }
 }
 

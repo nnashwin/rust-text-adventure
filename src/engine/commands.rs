@@ -29,6 +29,8 @@ pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
     "shoot" => Intent::ATTACK,
     "attack" => Intent::ATTACK,
     "charge" => Intent::CHARGE,
+    "jump" => Intent::ELEVATE,
+    "climb" => Intent::ELEVATE,
     "equip" => Intent::EQUIP,
     "examine" => Intent::EXAMINE,
     "pickup" => Intent::INVENTORY,
@@ -36,15 +38,14 @@ pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
     "grab" => Intent::INVENTORY,
     "push" => Intent::INTERACT,
     "touch" => Intent::INTERACT,
+    "show" => Intent::LIST_INVENTORY,
+    "list" => Intent::LIST_INVENTORY,
     "exit" => Intent::MOVEMENT,
     "go" => Intent::MOVEMENT,
     "move" => Intent::MOVEMENT,
     "run" => Intent::MOVEMENT,
     "walk" => Intent::MOVEMENT,
-    "jump" => Intent::ELEVATE,
-    "climb" => Intent::ELEVATE,
-    "show" => Intent::LIST_INVENTORY,
-    "list" => Intent::LIST_INVENTORY,
+    "use" => Intent::USE,
 };
 
 pub fn parse_command(command: &str) -> Option<Intent> {
