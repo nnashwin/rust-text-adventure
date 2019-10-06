@@ -1,2 +1,2 @@
 #!/bin/bash
-./temp-build.sh && go run server.go
+./scripts/temp-build.sh && go run server.go
