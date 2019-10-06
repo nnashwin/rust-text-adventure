@@ -323,17 +323,54 @@ mod tests {
 
     #[test]
     fn test_interact() {
-        let new_inter = &mut Interactable {
+        let new_inter = Interactable {
             name: "stone".to_string(),
             interaction_description: "The stone rolls onto the floor",
             before_interaction_description: "You see a stone sitting in between two logs",
             after_interaction_description: "The stone is sitting on the floor",
             interacted: false,
         };
-        assert_eq!(new_inter.interacted, false);
-        new_inter.interact();
 
-        assert_eq!(new_inter.interacted, true);
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                target: 1,
+                locked: false,
+                key: String::from(""),
+            }],
+            interactables: vec![new_inter],
+            items: vec![],
+        }];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let expected_after_interactable_description = "The stone is sitting on the floor";
+        let expected_before_interactable_description =
+            "You see a stone sitting in between two logs";
+        let expected_interaction_description = "The stone rolls onto the floor";
+
+        let before_state = update(game_state, "examine stone".to_string());
+        let interacting_state = update(before_state.clone(), "push stone".to_string());
+        let after_state = update(interacting_state.clone(), "examine stone".to_string());
+
+        assert_eq!(
+            expected_before_interactable_description,
+            before_state.sys_message
+        );
+        assert_eq!(
+            expected_interaction_description,
+            interacting_state.sys_message
+        );
+        assert_eq!(
+            expected_after_interactable_description,
+            after_state.sys_message
+        );
     }
 
     #[test]
