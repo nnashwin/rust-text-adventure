@@ -3,9 +3,6 @@ use phf::phf_map;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Intent {
-    ATTACK,
-    CHARGE,
-    ELEVATE,
     EQUIP,
     EXAMINE,
     INVENTORY,
@@ -23,14 +20,6 @@ impl Default for Intent {
 }
 
 pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
-    "bite" => Intent::ATTACK,
-    "hit" => Intent::ATTACK,
-    "destroy" => Intent::ATTACK,
-    "shoot" => Intent::ATTACK,
-    "attack" => Intent::ATTACK,
-    "charge" => Intent::CHARGE,
-    "jump" => Intent::ELEVATE,
-    "climb" => Intent::ELEVATE,
     "equip" => Intent::EQUIP,
     "examine" => Intent::EXAMINE,
     "pickup" => Intent::INVENTORY,

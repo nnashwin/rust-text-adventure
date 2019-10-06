@@ -176,10 +176,8 @@ pub fn start_game() -> GameState {
     };
 }
 
-pub fn update(mut prev_state: GameState, input: String) -> GameState {
+pub fn update(prev_state: GameState, input: String) -> GameState {
     prev_state.current_room_idx;
-    // println!("{}", prev_state.rooms.room.description);
-    // println!("\nWhat do you do?\n");
 
     let mut parsed_input = Input {
         ..Default::default()
@@ -187,7 +185,10 @@ pub fn update(mut prev_state: GameState, input: String) -> GameState {
 
     let mut new_game_state = prev_state.clone();
 
-    let room = &mut prev_state.rooms[prev_state.current_room_idx];
+    // use the new_game_state instead of previous so that we modify the new_game_state when
+    // interacting.
+    // This is fine since we just have a cloned previous state here
+    let room = &mut new_game_state.rooms[new_game_state.current_room_idx];
     let mut user_inventory = prev_state.inventory;
 
     let mut user_input = input.split_whitespace().peekable();
@@ -230,9 +231,6 @@ pub fn update(mut prev_state: GameState, input: String) -> GameState {
     }
 
     match parsed_input.intent {
-        Intent::ATTACK => println!("attack"),
-        Intent::CHARGE => println!("charge"),
-        Intent::ELEVATE => println!("elevate"),
         Intent::EXAMINE => {
             if parsed_input.is_interactable {
                 let description = room
@@ -258,7 +256,6 @@ pub fn update(mut prev_state: GameState, input: String) -> GameState {
                         room.interactables[i].interact();
                         new_game_state.sys_message =
                             String::from(room.interactables[i].interaction_description);
-                        continue;
                     }
                 }
             }
@@ -337,5 +334,48 @@ mod tests {
         new_inter.interact();
 
         assert_eq!(new_inter.interacted, true);
+    }
+
+    #[test]
+    fn test_move() {
+        let rooms = vec![
+            Room {
+                description: "Test Room 1".to_string(),
+                exits: vec![Exit {
+                    direction: Direction::S,
+                    target: 1,
+                    locked: false,
+                    key: String::from(""),
+                }],
+                interactables: vec![],
+                items: vec![],
+            },
+            Room {
+                description: "Test Room 2".to_string(),
+                exits: vec![Exit {
+                    direction: Direction::N,
+                    target: 0,
+                    locked: false,
+                    key: String::from(""),
+                }],
+                interactables: vec![],
+                items: vec![],
+            },
+        ];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let next_game_state = update(game_state, "go south".to_string());
+
+        let expected_room_idx = 1;
+        let expected_sys_message = "Test Room 2";
+
+        assert_eq!(expected_room_idx, next_game_state.current_room_idx);
+        assert_eq!(expected_sys_message, next_game_state.sys_message);
     }
 }
