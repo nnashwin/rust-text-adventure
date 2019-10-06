@@ -18,26 +18,7 @@ use direction::*;
 use examine::*;
 use item::*;
 
-#[derive(Debug)]
-struct Command {
-    intent: Intent,
-    target_room: Option<usize>,
-    item: Option<Item>,
-    interactable: Option<Interactable>,
-}
-
-fn check_command_optional(optional: Option<Command>) -> bool {
-    match optional {
-        Some(_command) => true,
-        None => false,
-    }
-}
-
-fn is_legal_command(command: &str) -> bool {
-    LEGAL_COMMANDS.contains_key(command)
-}
-
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Exit {
     direction: Direction,
     target: usize,
@@ -45,17 +26,12 @@ struct Exit {
     key: String,
 }
 
-impl Exit {
-    fn can_go(&self, direction: &Direction) -> bool {
-        self.direction == *direction && !self.locked
-    }
-}
-
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct GameState {
-    current_room: usize,
-    rooms: Vec<Room>,
-    inventory: HashMap<&'static str, Item>,
+    pub current_room_idx: usize,
+    pub inventory: HashMap<&'static str, Item>,
+    pub sys_message: String,
+    pub rooms: Vec<Room>,
 }
 
 #[derive(Debug, Default)]
@@ -67,16 +43,7 @@ struct Input {
     object_noun: String,
 }
 
-impl Input {
-    fn reset_input(&mut self) {
-        self.intent = Intent::NONE;
-        self.object_noun = "".to_string();
-        self.is_interactable = false;
-        self.is_item = false;
-    }
-}
-
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 struct Interactable {
     name: String,
     interaction_description: &'static str,
@@ -101,7 +68,7 @@ impl Examine for Interactable {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Room {
     description: String,
     interactables: Vec<Interactable>,
@@ -110,13 +77,12 @@ pub struct Room {
 }
 
 impl Room {
+    pub fn get_description(&self) -> &str {
+        &self.description
+    }
     fn is_escape(&self) -> bool {
         self.exits.len() == 0
     }
-}
-
-pub fn take_input(input: String) -> String {
-    input.to_owned()
 }
 
 pub fn start_game() -> GameState {
@@ -198,164 +164,157 @@ pub fn start_game() -> GameState {
                 items: vec![],
     }
         ];
-    let mut current_room = 0;
+    let mut current_room_idx = 0;
 
     let mut INVENTORY = create_inventory();
 
-    // while !rooms[current_room].is_escape() {
-    //     current_room =
-    //         enter(&mut INVENTORY, rooms.get_mut(current_room).unwrap()).unwrap_or(current_room);
-    // }
-
     return GameState {
-        current_room: 0,
+        current_room_idx: 0,
         inventory: create_inventory(),
         rooms: rooms,
+        sys_message: "".to_string(),
     };
 }
 
-fn enter(INVENTORY: &mut HashMap<&'static str, Item>, room: &mut Room) -> Option<usize> {
-    println!("{}", room.description);
-    println!("\nWhat do you do?\n");
+pub fn update(prev_state: GameState, input: String) -> GameState {
+    prev_state.current_room_idx;
 
-    let mut command: Option<Command> = None;
     let mut parsed_input = Input {
         ..Default::default()
     };
 
-    while let None = command {
-        let mut input = String::new();
+    let mut new_game_state = prev_state.clone();
 
-        io::stdin()
-            .read_line(&mut input)
-            .ok()
-            .expect("Failed to read line");
+    // use the new_game_state instead of previous so that we modify the new_game_state when
+    // interacting.
+    // This is fine since we just have a cloned previous state here
+    let room = &mut new_game_state.rooms[new_game_state.current_room_idx];
+    let mut user_inventory = prev_state.inventory;
 
-        let mut user_input = input.split_whitespace().peekable();
+    let mut user_input = input.split_whitespace().peekable();
+    let first_command = user_input.next().unwrap();
 
-        let first_command = user_input.next().unwrap();
+    if !is_legal_command(first_command) {
+        // If the command is not valid, we do not need to parse the rest of the string input
+        new_game_state.sys_message = format!("{} is not a legal command\n", first_command);
+        return new_game_state;
+    };
 
-        if !is_legal_command(first_command) {
-            println!("{} is not a legal command\n", first_command);
-            continue;
-        };
+    parsed_input.intent = determine_intent(first_command).unwrap();
 
-        parsed_input.intent = parse_command(first_command).unwrap();
+    for word in user_input {
+        let lowercase_word = word.to_lowercase();
+        if parsed_input.object_noun == "" {
+            if lowercase_word == "inventory" {
+                parsed_input.object_noun = lowercase_word;
+                continue;
+            }
 
-        for word in user_input {
-            let lowercase_word = word.to_lowercase();
-            if parsed_input.object_noun == "" {
-                if lowercase_word == "inventory" {
-                    parsed_input.object_noun = lowercase_word;
-                    continue;
-                }
+            if is_direction(lowercase_word.as_str()) {
+                parsed_input.object_noun = lowercase_word;
+                parsed_input.is_direction = true;
+                continue;
+            }
 
-                if is_direction(lowercase_word.as_str()) {
-                    parsed_input.object_noun = lowercase_word;
-                    parsed_input.is_direction = true;
-                    continue;
-                }
+            if user_inventory.contains_key(lowercase_word.as_str()) {
+                parsed_input.object_noun = lowercase_word;
+                parsed_input.is_item = true;
+                continue;
+            }
 
-                if INVENTORY.contains_key(lowercase_word.as_str()) {
-                    parsed_input.object_noun = lowercase_word;
-                    parsed_input.is_item = true;
-                    continue;
-                }
+            if room.interactables.iter().any(|x| x.name == lowercase_word) {
+                parsed_input.object_noun = lowercase_word;
+                parsed_input.is_interactable = true;
+                continue;
+            }
+        }
+    }
 
-                if room.interactables.iter().any(|x| x.name == lowercase_word) {
-                    parsed_input.object_noun = lowercase_word;
-                    parsed_input.is_interactable = true;
-                    continue;
+    match parsed_input.intent {
+        Intent::EXAMINE => {
+            if parsed_input.is_interactable {
+                let description = room
+                    .interactables
+                    .iter()
+                    .find(|x| x.name == parsed_input.object_noun)
+                    .unwrap()
+                    .examine();
+
+                new_game_state.sys_message = description.to_string();
+            } else if parsed_input.is_item {
+                let description = user_inventory
+                    .get::<str>(&parsed_input.object_noun)
+                    .unwrap()
+                    .get_description();
+                new_game_state.sys_message = description.to_string();
+            }
+        }
+        Intent::INTERACT => {
+            if parsed_input.is_interactable {
+                for i in 0..room.interactables.len() {
+                    if room.interactables[i].name == parsed_input.object_noun {
+                        room.interactables[i].interact();
+                        new_game_state.sys_message =
+                            String::from(room.interactables[i].interaction_description);
+                    }
                 }
             }
         }
-
-        match parsed_input.intent {
-            Intent::ATTACK => println!("attack"),
-            Intent::CHARGE => println!("charge"),
-            Intent::ELEVATE => println!("elevate"),
-            Intent::EXAMINE => {
-                if parsed_input.is_interactable {
-                    let description = room
-                        .interactables
-                        .iter()
-                        .find(|x| x.name == parsed_input.object_noun)
+        Intent::INVENTORY => {
+            let key = &parsed_input.object_noun;
+            if parsed_input.is_item {
+                user_inventory.get_mut::<str>(key).unwrap().to_inventory();
+                new_game_state.sys_message = format!(
+                    "You have picked up a {}",
+                    user_inventory
+                        .get_mut::<str>(key)
                         .unwrap()
-                        .examine();
-
-                    println!("{}", description);
-                } else if parsed_input.is_item {
-                    let description = &INVENTORY
-                        .get::<str>(&parsed_input.object_noun)
-                        .unwrap()
-                        .get_description();
-                    println!("You see a {}", description);
-                }
+                        .get_name()
+                        .to_string()
+                );
             }
-            Intent::INTERACT => {
-                if parsed_input.is_interactable {
-                    for i in 0..room.interactables.len() {
-                        if room.interactables[i].name == parsed_input.object_noun {
-                            room.interactables[i].interact();
-                            println!("{}", room.interactables[i].interaction_description);
-                            continue;
-                        }
-                    }
-                }
-            }
-            Intent::INVENTORY => {
-                let key = &parsed_input.object_noun;
-                if parsed_input.is_item {
-                    INVENTORY.get_mut::<str>(key).unwrap().to_inventory();
-                }
-            }
-            Intent::LIST_INVENTORY => {
-                println!("Your Inventory:\n");
-                for item in INVENTORY.values() {
-                    if item.get_location() == &ItemState::Equipped {
-                        println!("{}: {}\n", item.get_name(), item.get_description());
-                    }
-                }
-            }
-            Intent::MOVEMENT => {
-                if parsed_input.is_direction {
-                    let direction: Direction =
-                        text_to_direction(&parsed_input.object_noun).unwrap();
-
-                    let exit: Option<&Exit> = room.exits.iter().find(|&x| x.direction == direction);
-
-                    if exit.is_none() {
-                        println!("There is no exit leaving {}", parsed_input.object_noun);
-                    } else if parsed_input.is_direction && exit.is_some() {
-                        command = Some(Command {
-                            intent: Intent::MOVEMENT,
-                            target_room: Some(exit.unwrap().target),
-                            interactable: None,
-                            item: None,
-                        })
-                    }
-                } else {
-                    println!("You can not move to {}", parsed_input.object_noun);
-                }
-            }
-            Intent::USE => println!("use"),
-            _ => println!("You didn't choose an appropriate command"),
         }
+        Intent::LIST_INVENTORY => {
+            let mut inventory_message: String = "".to_owned();
+            inventory_message.push_str("Your inventory:\n");
+            for item in user_inventory.values() {
+                if item.get_location() == &ItemState::Equipped {
+                    inventory_message.push_str(&format!(
+                        "{}: {}\n",
+                        item.get_name(),
+                        item.get_description()
+                    ));
+                }
+            }
 
-        parsed_input.reset_input();
+            new_game_state.sys_message = inventory_message;
+        }
+        Intent::MOVEMENT => {
+            if parsed_input.is_direction {
+                let direction: Direction = text_to_direction(&parsed_input.object_noun).unwrap();
+
+                let exit: Option<&Exit> = room.exits.iter().find(|&x| x.direction == direction);
+
+                if exit.is_none() {
+                    new_game_state.sys_message =
+                        format!("There is no exit leaving {}", parsed_input.object_noun);
+                } else if parsed_input.is_direction && exit.is_some() {
+                    new_game_state.current_room_idx = exit.unwrap().target;
+                    new_game_state.sys_message = new_game_state.rooms
+                        [new_game_state.current_room_idx]
+                        .description
+                        .to_string();
+                }
+            } else {
+                new_game_state.sys_message =
+                    format!("You can not move to {}", parsed_input.object_noun);
+            }
+        }
+        Intent::USE => new_game_state.sys_message = format!("use"),
+        _ => new_game_state.sys_message = format!("You didn't choose an appropriate command"),
     }
 
-    let unwrapped_command = command.unwrap();
-    let is_movement = unwrapped_command.intent == Intent::MOVEMENT;
-
-    match is_movement {
-        true => unwrapped_command.target_room,
-        _ => None,
-    }
-}
-
-pub fn print_out_module() {
-    println!("Inside of lib");
+    return new_game_state;
 }
 
 #[cfg(test)]
@@ -364,16 +323,96 @@ mod tests {
 
     #[test]
     fn test_interact() {
-        let new_inter = &mut Interactable {
+        let new_inter = Interactable {
             name: "stone".to_string(),
             interaction_description: "The stone rolls onto the floor",
             before_interaction_description: "You see a stone sitting in between two logs",
             after_interaction_description: "The stone is sitting on the floor",
             interacted: false,
         };
-        assert_eq!(new_inter.interacted, false);
-        new_inter.interact();
 
-        assert_eq!(new_inter.interacted, true);
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                target: 1,
+                locked: false,
+                key: String::from(""),
+            }],
+            interactables: vec![new_inter],
+            items: vec![],
+        }];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let expected_after_interactable_description = "The stone is sitting on the floor";
+        let expected_before_interactable_description =
+            "You see a stone sitting in between two logs";
+        let expected_interaction_description = "The stone rolls onto the floor";
+
+        let before_state = update(game_state, "examine stone".to_string());
+        let interacting_state = update(before_state.clone(), "push stone".to_string());
+        let after_state = update(interacting_state.clone(), "examine stone".to_string());
+
+        assert_eq!(
+            expected_before_interactable_description,
+            before_state.sys_message
+        );
+        assert_eq!(
+            expected_interaction_description,
+            interacting_state.sys_message
+        );
+        assert_eq!(
+            expected_after_interactable_description,
+            after_state.sys_message
+        );
+    }
+
+    #[test]
+    fn test_move() {
+        let rooms = vec![
+            Room {
+                description: "Test Room 1".to_string(),
+                exits: vec![Exit {
+                    direction: Direction::S,
+                    target: 1,
+                    locked: false,
+                    key: String::from(""),
+                }],
+                interactables: vec![],
+                items: vec![],
+            },
+            Room {
+                description: "Test Room 2".to_string(),
+                exits: vec![Exit {
+                    direction: Direction::N,
+                    target: 0,
+                    locked: false,
+                    key: String::from(""),
+                }],
+                interactables: vec![],
+                items: vec![],
+            },
+        ];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let next_game_state = update(game_state, "go south".to_string());
+
+        let expected_room_idx = 1;
+        let expected_sys_message = "Test Room 2";
+
+        assert_eq!(expected_room_idx, next_game_state.current_room_idx);
+        assert_eq!(expected_sys_message, next_game_state.sys_message);
     }
 }

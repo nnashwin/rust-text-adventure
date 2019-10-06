@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ItemState {
     Room,
     Inventory,
     Equipped,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Item {
     name: String,
     description: String,
