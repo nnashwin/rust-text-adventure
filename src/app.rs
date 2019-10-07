@@ -125,12 +125,10 @@ impl Renderable<Model> for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div class="webapp-wrapper">
-                { self.view_input() }
-
-                <div>
-                    <div>{ "Entries" }</div>
-                    <div>{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
-                </div>
+                    <div class="terminal">
+                        <div>{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
+                        { self.view_input() }
+                    </div>
             </div>
         }
     }
@@ -140,12 +138,12 @@ impl Model {
     fn view_input(&self) -> Html<Model> {
         html! {
             <input
-                placeholder="What do you want to say?"
+                id="cli-input"
                 value=&self.app_state.value
                 oninput=|e| Msg::Update(e.value)
                 onkeypress=|e| {
                    if e.key() == "Enter" { Msg::Add } else { Msg::None }
-                } />
+            } />
         }
     }
 }

@@ -1,3 +1,16 @@
+@import url(https://fonts.googleapis.com/css?family=VT323);
 * {
    box-sizing: border-box; 
+   font-family: 'VT323', Courier;
+}
+
+.terminal {
+    position: relative;
+    height: 50vh;
+}
+
+#cli-input {
+    position: absolute;
+    bottom: 0;
+    width: 100vw;
 }
