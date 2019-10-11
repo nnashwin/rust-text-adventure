@@ -140,6 +140,7 @@ impl Model {
     fn view_input(&self) -> Html<Model> {
         html! {
             <input
+                autofocus="true"
                 id="cli-input"
                 value=&self.app_state.value
                 oninput=|e| Msg::Update(e.value)

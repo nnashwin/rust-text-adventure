@@ -47,6 +47,7 @@ body {
     bottom: 0;
     caret-color: var(--user-input-color);
     color: var(--user-input-color);
+    font-size: 1.3rem;
     height: 1.5rem;
     position: absolute;
     width: 100vw;
