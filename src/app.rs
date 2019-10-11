@@ -11,7 +11,7 @@ mod engine;
 
 use engine::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Eq, PartialEq)]
 enum Author {
     System,
     Player,
@@ -125,6 +125,8 @@ impl Renderable<Model> for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div class="webapp-wrapper">
+                    <div class="overlay"></div>
+                    <div class="scanline"></div>
                     <div class="terminal">
                         <div>{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
                         { self.view_input() }
@@ -156,8 +158,14 @@ fn determine_win(state: String) -> Msg {
 }
 
 fn view_entry((idx, entry): (usize, &Entry)) -> Html<Model> {
+    let class_str = if entry.author == Author::System {
+        "system-msg"
+    } else {
+        "user-msg"
+    };
+
     html! {
-        <div id={idx}>{ &entry.text }</div>
+        <div class={class_str} id={idx}>{ &entry.text }</div>
     }
 }
 
