@@ -11,7 +11,7 @@ mod engine;
 
 use engine::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Eq, PartialEq)]
 enum Author {
     System,
     Player,
@@ -125,12 +125,12 @@ impl Renderable<Model> for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div class="webapp-wrapper">
-                { self.view_input() }
-
-                <div>
-                    <div>{ "Entries" }</div>
-                    <div>{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
-                </div>
+                    <div class="overlay"></div>
+                    <div class="scanline"></div>
+                    <div class="terminal">
+                        <div class="text-display">{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
+                        { self.view_input() }
+                    </div>
             </div>
         }
     }
@@ -140,12 +140,13 @@ impl Model {
     fn view_input(&self) -> Html<Model> {
         html! {
             <input
-                placeholder="What do you want to say?"
+                autofocus="autofocus"
+                id="cli-input"
                 value=&self.app_state.value
                 oninput=|e| Msg::Update(e.value)
                 onkeypress=|e| {
                    if e.key() == "Enter" { Msg::Add } else { Msg::None }
-                } />
+            } />
         }
     }
 }
@@ -158,16 +159,13 @@ fn determine_win(state: String) -> Msg {
 }
 
 fn view_entry((idx, entry): (usize, &Entry)) -> Html<Model> {
-    html! {
-        <div id={idx}>{ &entry.text }</div>
-    }
-}
+    let class_str = if entry.author == Author::System {
+        "system-msg"
+    } else {
+        "user-msg"
+    };
 
-fn view_live_let_die_buttons(has_won: bool) -> Html<Model> {
     html! {
-        <div>
-           <button>{ "Live" }</button>
-           <button>{ "Let Die" }</button>
-        </div>
+        <div class={class_str} id={idx}>{ &entry.text }</div>
     }
 }

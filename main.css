@@ -1,0 +1,60 @@
+@import url(https://fonts.googleapis.com/css?family=VT323);
+
+:root {
+    --user-input-color: #00dd00;
+    --system-input-color: #009300;
+}
+
+* {
+   box-sizing: border-box; 
+   font-family: 'VT323', Courier;
+}
+
+body {
+    background: #383838;
+}
+
+.overlay:after {
+	animation: flicker 0.30s infinite;
+	background: rgba(16, 16, 16, 0.2);
+	content: "";
+	display: block;
+	pointer-events: none;
+	position: fixed;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+	z-index: 2;
+}
+
+.system-msg {
+    color: var(--system-input-color);
+}
+
+.terminal {
+    height: 50vh;
+    padding: 1.3rem;
+    position: relative;
+    font-size: 1.3rem;
+}
+
+.text-display {
+    height: 42vh;
+    overflow-y: scroll;
+}
+
+.user-msg {
+    color: var(--user-input-color);
+}
+
+#cli-input {
+    background: transparent;
+    border: 1px solid var(--user-input-color);
+    caret-color: var(--user-input-color);
+    color: var(--user-input-color);
+    font-size: 1.3rem;
+    height: 1.5rem;
+    margin-top: 1rem;
+    width: 100%;
+}
