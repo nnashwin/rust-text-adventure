@@ -128,7 +128,7 @@ impl Renderable<Model> for Model {
                     <div class="overlay"></div>
                     <div class="scanline"></div>
                     <div class="terminal">
-                        <div>{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
+                        <div class="text-display">{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
                         { self.view_input() }
                     </div>
             </div>
@@ -167,14 +167,5 @@ fn view_entry((idx, entry): (usize, &Entry)) -> Html<Model> {
 
     html! {
         <div class={class_str} id={idx}>{ &entry.text }</div>
-    }
-}
-
-fn view_live_let_die_buttons(has_won: bool) -> Html<Model> {
-    html! {
-        <div>
-           <button>{ "Live" }</button>
-           <button>{ "Let Die" }</button>
-        </div>
     }
 }

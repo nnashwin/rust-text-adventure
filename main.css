@@ -33,8 +33,15 @@ body {
 }
 
 .terminal {
-    position: relative;
     height: 50vh;
+    padding: 1.3rem;
+    position: relative;
+    font-size: 1.3rem;
+}
+
+.text-display {
+    height: 42vh;
+    overflow-y: scroll;
 }
 
 .user-msg {
@@ -44,13 +51,10 @@ body {
 #cli-input {
     background: transparent;
     border: 1px solid var(--user-input-color);
-    bottom: 0;
     caret-color: var(--user-input-color);
     color: var(--user-input-color);
     font-size: 1.3rem;
     height: 1.5rem;
-    position: absolute;
-    width: 100vw;
+    margin-top: 1rem;
+    width: 100%;
 }
-
-
