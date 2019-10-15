@@ -11,6 +11,8 @@ mod engine;
 
 use engine::*;
 
+const MAXSCROLL: i32 = 9000;
+
 #[derive(Serialize, Deserialize, Eq, PartialEq)]
 enum Author {
     System,
@@ -128,7 +130,7 @@ impl Renderable<Model> for Model {
                     <div class="overlay"></div>
                     <div class="scanline"></div>
                     <div class="terminal">
-                        <div class="text-display">{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
+                        { view_text_space(&self.app_state.entries) }
                         { self.view_input() }
                     </div>
             </div>
@@ -156,6 +158,12 @@ fn determine_win(state: String) -> Msg {
         return Msg::Win;
     }
     Msg::Add
+}
+
+fn view_text_space(entries: &Vec<Entry>) -> Html<Model> {
+    html! {
+        <div class="text-display" style={format!("scrollHeight: {};", MAXSCROLL)}>{ for entries.iter().enumerate().map(view_entry) }</div>
+    }
 }
 
 fn view_entry((idx, entry): (usize, &Entry)) -> Html<Model> {
