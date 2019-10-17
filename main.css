@@ -107,6 +107,8 @@ body {
 .text-display {
     height: 90vh;
     overflow-y: scroll;
+    display: flex;
+    flex-direction: column-reverse;
 }
 
 .user-msg {
