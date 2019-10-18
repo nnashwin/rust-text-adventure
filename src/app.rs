@@ -11,13 +11,13 @@ mod engine;
 
 use engine::*;
 
-#[derive(Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Serialize, Debug, Deserialize, Eq, PartialEq)]
 enum Author {
     System,
     Player,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Debug, Deserialize)]
 struct Entry {
     text: String,
     author: Author,
@@ -73,6 +73,10 @@ impl Component for Model {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::Add => {
+                if self.app_state.value == "" {
+                    return false;
+                }
+
                 let entry = if self.app_state.value == "win" {
                     self.app_state.has_won = true;
 
@@ -87,15 +91,18 @@ impl Component for Model {
                     }
                 };
 
-                self.app_state.entries.push(entry);
+                self.app_state.entries.insert(0, entry);
 
                 let input = self.app_state.value.clone();
                 let next_game_state = update(self.game_state.clone(), input);
 
-                self.app_state.entries.push(Entry {
-                    text: next_game_state.sys_message.clone(),
-                    author: Author::System,
-                });
+                self.app_state.entries.insert(
+                    0,
+                    Entry {
+                        text: next_game_state.sys_message.clone(),
+                        author: Author::System,
+                    },
+                );
 
                 // Need to set next game_state so that the game actually updates
                 self.game_state = next_game_state;
@@ -111,6 +118,7 @@ impl Component for Model {
                     author: Author::System,
                 };
 
+                print!("{:?}", self.app_state.entries);
                 self.app_state.entries.push(entry);
 
                 self.app_state.has_won = true;
@@ -128,6 +136,7 @@ impl Renderable<Model> for Model {
                     <div class="overlay"></div>
                     <div class="scanline"></div>
                     <div class="terminal">
+
                         <div class="text-display">{ for self.app_state.entries.iter().enumerate().map(view_entry) }</div>
                         { self.view_input() }
                     </div>
