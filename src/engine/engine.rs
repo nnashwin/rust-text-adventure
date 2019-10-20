@@ -177,8 +177,6 @@ pub fn start_game() -> GameState {
 }
 
 pub fn update(prev_state: GameState, input: String) -> GameState {
-    prev_state.current_room_idx;
-
     let mut parsed_input = Input {
         ..Default::default()
     };
@@ -189,7 +187,7 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
     // interacting.
     // This is fine since we just have a cloned previous state here
     let room = &mut new_game_state.rooms[new_game_state.current_room_idx];
-    let mut user_inventory = prev_state.inventory;
+    let user_inventory = &mut new_game_state.inventory;
 
     let mut user_input = input.split_whitespace().peekable();
     let first_command = user_input.next().unwrap();
@@ -263,15 +261,16 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
         Intent::INVENTORY => {
             let key = &parsed_input.object_noun;
             if parsed_input.is_item {
-                user_inventory.get_mut::<str>(key).unwrap().to_inventory();
-                new_game_state.sys_message = format!(
-                    "You have picked up a {}",
-                    user_inventory
-                        .get_mut::<str>(key)
-                        .unwrap()
-                        .get_name()
-                        .to_string()
-                );
+                let item = user_inventory.get_mut::<str>(key).unwrap();
+                if *item.get_location() == ItemState::Room {
+                    item.to_inventory();
+
+                    new_game_state.sys_message =
+                        format!("You have picked up a {}", item.get_name().to_string());
+                } else {
+                    new_game_state.sys_message =
+                        format!("You already have the {}", item.get_name().to_string());
+                }
             }
         }
         Intent::LIST_INVENTORY => {
@@ -414,5 +413,42 @@ mod tests {
 
         assert_eq!(expected_room_idx, next_game_state.current_room_idx);
         assert_eq!(expected_sys_message, next_game_state.sys_message);
+    }
+
+    #[test]
+    fn test_inventory() {
+        let new_item = Item {
+            name: "helmet".to_string(),
+            description: "A large, blue helmet".to_string(),
+            location: ItemState::Room,
+        };
+
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                target: 1,
+                locked: false,
+                key: String::from(""),
+            }],
+            interactables: vec![],
+            items: vec!["helmet"],
+        }];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let before_state = update(game_state.clone(), "grab helmet".to_string());
+        let after_state = update(before_state.clone(), "grab helmet".to_string());
+
+        let expected_before_sys_message = "You have picked up a helmet";
+        let expected_sys_message = "You already have the helmet";
+
+        assert_eq!(expected_before_sys_message, before_state.sys_message);
+        assert_eq!(expected_sys_message, after_state.sys_message);
     }
 }
