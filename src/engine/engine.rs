@@ -277,7 +277,9 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
             let mut inventory_message: String = "".to_owned();
             inventory_message.push_str("Your inventory:\n");
             for item in user_inventory.values() {
-                if item.get_location() == &ItemState::Equipped {
+                // If the item isn't in the Room, it is either in the user's inventory or equipped
+                // since there are currently only three states
+                if *item.get_location() != ItemState::Room {
                     inventory_message.push_str(&format!(
                         "{}: {}\n",
                         item.get_name(),
