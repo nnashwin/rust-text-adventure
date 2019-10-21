@@ -118,7 +118,6 @@ impl Component for Model {
                     author: Author::System,
                 };
 
-                print!("{:?}", self.app_state.entries);
                 self.app_state.entries.push(entry);
 
                 self.app_state.has_won = true;

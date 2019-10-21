@@ -9,10 +9,9 @@ pub enum ItemState {
 
 #[derive(Clone, Debug)]
 pub struct Item {
-    name: String,
-    description: String,
-    weight: usize,
-    location: ItemState,
+    pub name: String,
+    pub description: String,
+    pub location: ItemState,
 }
 
 impl Item {
@@ -57,7 +56,6 @@ pub fn create_inventory() -> HashMap<&'static str, Item> {
         Item {
             name: "helmet".to_string(),
             description: "a blue helmet covered in dirt".to_string(),
-            weight: 30,
             location: ItemState::Room,
         },
     );
@@ -67,7 +65,6 @@ pub fn create_inventory() -> HashMap<&'static str, Item> {
         Item {
             name: "buster".to_string(),
             description: "A large cannon with four buttons".to_string(),
-            weight: 20,
             location: ItemState::Room,
         },
     );
@@ -86,7 +83,6 @@ mod tests {
         let new_item = Item {
             name: "test".to_string(),
             description: expected.clone(),
-            weight: 30,
             location: ItemState::Room,
         };
 
@@ -100,7 +96,6 @@ mod tests {
         let new_item = Item {
             name: expected.clone(),
             description: "test desc".to_string(),
-            weight: 30,
             location: ItemState::Room,
         };
 
@@ -114,7 +109,6 @@ mod tests {
         let new_item = Item {
             name: "test".to_string(),
             description: "test desc".to_string(),
-            weight: 30,
             location: ItemState::Room,
         };
 
@@ -128,7 +122,6 @@ mod tests {
         let new_item = &mut Item {
             name: "test".to_string(),
             description: "test desc".to_string(),
-            weight: 30,
             location: ItemState::Inventory,
         };
 
@@ -143,7 +136,6 @@ mod tests {
         let new_item = &mut Item {
             name: "test".to_string(),
             description: "test desc".to_string(),
-            weight: 30,
             location: ItemState::Room,
         };
 
