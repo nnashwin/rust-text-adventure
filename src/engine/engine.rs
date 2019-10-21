@@ -418,7 +418,7 @@ mod tests {
     }
 
     #[test]
-    fn test_inventory() {
+    fn test_update_inventory() {
         let new_item = Item {
             name: "helmet".to_string(),
             description: "A large, blue helmet".to_string(),
@@ -452,5 +452,34 @@ mod tests {
 
         assert_eq!(expected_before_sys_message, before_state.sys_message);
         assert_eq!(expected_sys_message, after_state.sys_message);
+    }
+
+    #[test]
+    fn test_list_inventory() {
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                target: 1,
+                locked: false,
+                key: String::from(""),
+            }],
+            interactables: vec![],
+            items: vec!["helmet"],
+        }];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let before_state = update(game_state.clone(), "grab helmet".to_string());
+        let new_game_state = update(before_state.clone(), "list inventory".to_string());
+
+        let expected_sys_message = "Your inventory:\nhelmet: a blue helmet covered in dirt\n";
+
+        assert_eq!(expected_sys_message, new_game_state.sys_message);
     }
 }
