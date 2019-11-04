@@ -56,7 +56,7 @@ A pendant found in a dumpster close to the lab.
 *use pendant*
 The pendant fits into the panel in the door.
 You hear a brief beeping sound and see a few lights on the panel turn from red to green.
-The door swings open to the south.
+The door slides open and exposes a path to the south.
 
 *go south*
 You are greeted to a plainly built laboratory.  Dust and rubble covers most of the floor, and you can see two exits to the south and east.
