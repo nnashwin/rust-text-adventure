@@ -21,9 +21,24 @@ use item::*;
 #[derive(Clone, Debug)]
 struct Exit {
     direction: Direction,
-    target: usize,
     locked: bool,
-    key: String,
+    interactable_id: String,
+    target: usize,
+}
+
+impl Exit {
+    fn is_locked(&self) -> bool {
+        self.locked
+    }
+
+    fn unlock(&mut self, i_arr: Vec<Interactable>) {
+        let should_unlock = i_arr
+            .iter()
+            .find(|&x| x.id == self.interactable_id)
+            .unwrap()
+            .is_interacted();
+        self.locked = false
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -45,16 +60,22 @@ struct Input {
 
 #[derive(Clone, Debug)]
 struct Interactable {
-    name: String,
-    interaction_description: &'static str,
-    before_interaction_description: &'static str,
     after_interaction_description: &'static str,
+    before_interaction_description: &'static str,
+    id: String,
+    interaction_description: &'static str,
     interacted: bool,
+    name: String,
+    prerequisite_item: String,
 }
 
 impl Interactable {
     fn interact(&mut self) {
         self.interacted = true
+    }
+
+    fn is_interacted(&self) -> bool {
+        self.interacted
     }
 }
 
@@ -88,22 +109,22 @@ impl Room {
 pub fn start_game() -> GameState {
     let mut rooms = vec![
             Room {
-                description: "You find yourself in a room. There is a door to the south and a door to the east. A stone sits in the far corner of the room to your west".to_string(),
+                description: "A wind blows over the dunes of sand that cover the known world as you step up to a large dilapidated building.
+
+Unlike other ruins you have seen in the past, this structure does not speak of a lavish past.
+
+You are greeted with a metal door weathered from the years and bearing a strange insignia.".to_string(),
                 exits: vec![
                     Exit {
                         direction: Direction::S,
+                        interactable_id: "lab_entrance".to_string(),
+                        locked: true,
                         target: 2,
-                        locked: false,
-                        key: String::from(""),
-                    },
-                    Exit {
-                        direction: Direction::E,
-                        target: 1,
-                        locked: false,
-                        key: String::from(""),
                     },
                 ],
-                interactables: vec![Interactable{name: "stone".to_string(), interaction_description: "The stone falls to the floor", before_interaction_description: "You see a stone sitting in between two logs", after_interaction_description: "The stone rolled onto the floor and has revealed a secret passageway.", interacted: false}],
+                interactables: vec![Interactable{id: "lab_entrance".to_string(), name: "door".to_string(), interaction_description: "The pendant fits into the panel in the door.
+You hear a brief beeping sound and see a few lights on the panel turn from red to green.
+The door swings open to the south.", before_interaction_description: "You notice a small panel to the side of the door with what seems to be a slot to fit something in.", after_interaction_description: "The door slides open and exposes a path to the south.", interacted: false, prerequisite_item: "pendant".to_string()}],
                 items: vec![],
             },
             Room {
@@ -111,15 +132,15 @@ pub fn start_game() -> GameState {
                 exits: vec![
                     Exit {
                         direction: Direction::W,
-                        target: 0,
+                        interactable_id: "".to_string(),
                         locked: false,
-                        key: String::from(""),
+                        target: 0,
                     },
                     Exit {
                         direction: Direction::S,
+                        interactable_id: "".to_string(),
                         target: 3,
                         locked: false,
-                        key: String::from(""),
                     },
                 ],
                 interactables: vec![],
@@ -130,9 +151,9 @@ pub fn start_game() -> GameState {
                 exits: vec![
                     Exit {
                         direction: Direction::N,
+                        interactable_id: "".to_string(),
                         target: 0,
                         locked: false,
-                        key: String::from(""),
                     },
                 ],
                 interactables: vec![],
@@ -143,15 +164,15 @@ pub fn start_game() -> GameState {
                 exits: vec![
                     Exit {
                         direction: Direction::N,
+                        interactable_id: "".to_string(),
                         target: 1,
                         locked: false,
-                        key: String::from(""),
                     },
                     Exit {
                         direction: Direction::S,
+                        interactable_id: "".to_string(),
                         target: 4,
                         locked: false,
-                        key: String::from(""),
                     },
                 ],
                 interactables: vec![],
@@ -299,6 +320,10 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                 if exit.is_none() {
                     new_game_state.sys_message =
                         format!("There is no exit leaving {}", parsed_input.object_noun);
+                } else if exit.unwrap().is_locked() {
+                    new_game_state.sys_message = format!(
+                        "That way is locked.  You must unlock the path before you proceed."
+                    );
                 } else if parsed_input.is_direction && exit.is_some() {
                     new_game_state.current_room_idx = exit.unwrap().target;
                     new_game_state.sys_message = new_game_state.rooms
@@ -323,22 +348,63 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_interact() {
+    fn test_locked_exit() {
         let new_inter = Interactable {
-            name: "stone".to_string(),
-            interaction_description: "The stone rolls onto the floor",
-            before_interaction_description: "You see a stone sitting in between two logs",
             after_interaction_description: "The stone is sitting on the floor",
+            before_interaction_description: "You see a stone sitting in between two logs",
+            id: "lab_stone".to_string(),
             interacted: false,
+            interaction_description: "The stone rolls onto the floor",
+            name: "stone".to_string(),
+            prerequisite_item: "".to_string(),
         };
 
         let rooms = vec![Room {
             description: "Test Room 1".to_string(),
             exits: vec![Exit {
                 direction: Direction::S,
+                interactable_id: "".to_string(),
+                target: 1,
+                locked: true,
+            }],
+            interactables: vec![new_inter],
+            items: vec![],
+        }];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let before_state = update(game_state, "go south".to_string());
+
+        assert_eq!(
+            "That way is locked.  You must unlock the path before you proceed.".to_string(),
+            before_state.sys_message
+        );
+    }
+
+    #[test]
+    fn test_interact() {
+        let new_inter = Interactable {
+            after_interaction_description: "The stone is sitting on the floor",
+            before_interaction_description: "You see a stone sitting in between two logs",
+            id: "lab_stone".to_string(),
+            interacted: false,
+            interaction_description: "The stone rolls onto the floor",
+            name: "stone".to_string(),
+            prerequisite_item: "".to_string(),
+        };
+
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                interactable_id: "".to_string(),
                 target: 1,
                 locked: false,
-                key: String::from(""),
             }],
             interactables: vec![new_inter],
             items: vec![],
@@ -381,9 +447,9 @@ mod tests {
                 description: "Test Room 1".to_string(),
                 exits: vec![Exit {
                     direction: Direction::S,
+                    interactable_id: "".to_string(),
                     target: 1,
                     locked: false,
-                    key: String::from(""),
                 }],
                 interactables: vec![],
                 items: vec![],
@@ -392,9 +458,9 @@ mod tests {
                 description: "Test Room 2".to_string(),
                 exits: vec![Exit {
                     direction: Direction::N,
+                    interactable_id: "".to_string(),
                     target: 0,
                     locked: false,
-                    key: String::from(""),
                 }],
                 interactables: vec![],
                 items: vec![],
@@ -429,9 +495,9 @@ mod tests {
             description: "Test Room 1".to_string(),
             exits: vec![Exit {
                 direction: Direction::S,
+                interactable_id: "".to_string(),
                 target: 1,
                 locked: false,
-                key: String::from(""),
             }],
             interactables: vec![],
             items: vec!["helmet"],
@@ -460,9 +526,9 @@ mod tests {
             description: "Test Room 1".to_string(),
             exits: vec![Exit {
                 direction: Direction::S,
+                interactable_id: "".to_string(),
                 target: 1,
                 locked: false,
-                key: String::from(""),
             }],
             interactables: vec![],
             items: vec!["helmet"],
