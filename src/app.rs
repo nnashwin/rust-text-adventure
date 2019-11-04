@@ -1,5 +1,3 @@
-#![recursion_limit = "512"]
-
 use std::collections::HashMap;
 
 use serde_derive::{Deserialize, Serialize};
