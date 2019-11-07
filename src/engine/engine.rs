@@ -139,8 +139,8 @@ The door swings open to the south.", before_interaction_description: "You notice
                     Exit {
                         direction: Direction::S,
                         interactable_id: "".to_string(),
-                        target: 3,
                         locked: false,
+                        target: 3,
                     },
                 ],
                 interactables: vec![],
@@ -270,12 +270,21 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
         }
         Intent::INTERACT => {
             if parsed_input.is_interactable {
-                for i in 0..room.interactables.len() {
-                    if room.interactables[i].name == parsed_input.object_noun {
-                        room.interactables[i].interact();
-                        new_game_state.sys_message =
-                            String::from(room.interactables[i].interaction_description);
-                    }
+                let inter_pos = room
+                    .interactables
+                    .iter()
+                    .position(|x| x.name == parsed_input.object_noun)
+                    .unwrap();
+
+                let &mut interactable = &mut (room.interactables[inter_pos]);
+                new_game_state.sys_message = if interactable.prerequisite_item.is_empty() {
+                    interactable.interact();
+                    interactable.interaction_description.to_string()
+                } else {
+                    format!(
+                        "You currently can not interact with {}",
+                        interactable.name.clone()
+                    )
                 }
             }
         }
@@ -321,9 +330,8 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                     new_game_state.sys_message =
                         format!("There is no exit leaving {}", parsed_input.object_noun);
                 } else if exit.unwrap().is_locked() {
-                    new_game_state.sys_message = format!(
-                        "That way is locked.  You must unlock the path before you proceed."
-                    );
+                    new_game_state.sys_message =
+                        format!("The way is locked.  You must unlock the path before you proceed.");
                 } else if parsed_input.is_direction && exit.is_some() {
                     new_game_state.current_room_idx = exit.unwrap().target;
                     new_game_state.sys_message = new_game_state.rooms
@@ -331,9 +339,9 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                         .description
                         .to_string();
                 }
-            } else {
+            } else if !parsed_input.is_direction {
                 new_game_state.sys_message =
-                    format!("You can not move to {}", parsed_input.object_noun);
+                    format!("There is no path to the {}", parsed_input.object_noun);
             }
         }
         Intent::USE => new_game_state.sys_message = format!("use"),
