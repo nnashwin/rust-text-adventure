@@ -157,13 +157,6 @@ impl Model {
     }
 }
 
-fn determine_win(state: String) -> Msg {
-    if state == "win" {
-        return Msg::Win;
-    }
-    Msg::Add
-}
-
 fn view_entry((idx, entry): (usize, &Entry)) -> Html<Model> {
     let class_str = if entry.author == Author::System {
         "system-msg"
