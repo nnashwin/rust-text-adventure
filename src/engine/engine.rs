@@ -276,14 +276,13 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                     .position(|x| x.name == parsed_input.object_noun)
                     .unwrap();
 
-                let &mut interactable = &mut (room.interactables[inter_pos]);
-                new_game_state.sys_message = if interactable.prerequisite_item.is_empty() {
-                    interactable.interact();
-                    interactable.interaction_description.to_string()
+                new_game_state.sys_message = if room.interactables[inter_pos].prerequisite_item.is_empty() {
+                    room.interactables[inter_pos].interact();
+                    room.interactables[inter_pos].interaction_description.to_string()
                 } else {
                     format!(
                         "You currently can not interact with {}",
-                        interactable.name.clone()
+                        room.interactables[inter_pos].name.clone()
                     )
                 }
             }
@@ -331,7 +330,7 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                         format!("There is no exit leaving {}", parsed_input.object_noun);
                 } else if exit.unwrap().is_locked() {
                     new_game_state.sys_message =
-                        format!("The way is locked.  You must unlock the path before you proceed.");
+                        format!("The way is locked. You must unlock the path before you proceed.");
                 } else if parsed_input.is_direction && exit.is_some() {
                     new_game_state.current_room_idx = exit.unwrap().target;
                     new_game_state.sys_message = new_game_state.rooms
@@ -388,10 +387,7 @@ mod tests {
 
         let before_state = update(game_state, "go south".to_string());
 
-        assert_eq!(
-            "That way is locked.  You must unlock the path before you proceed.".to_string(),
-            before_state.sys_message
-        );
+        assert_eq!("The way is locked. You must unlock the path before you proceed.".to_string(), before_state.sys_message);
     }
 
     #[test]
