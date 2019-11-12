@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::io;
 
 #[path = "commands.rs"]
 mod commands;
@@ -31,12 +30,7 @@ impl Exit {
         self.locked
     }
 
-    fn unlock(&mut self, i_arr: Vec<Interactable>) {
-        let should_unlock = i_arr
-            .iter()
-            .find(|&x| x.id == self.interactable_id)
-            .unwrap()
-            .is_interacted();
+    fn unlock(&mut self) {
         self.locked = false
     }
 }
@@ -101,13 +95,10 @@ impl Room {
     pub fn get_description(&self) -> &str {
         &self.description
     }
-    fn is_escape(&self) -> bool {
-        self.exits.len() == 0
-    }
 }
 
 pub fn start_game() -> GameState {
-    let mut rooms = vec![
+    let rooms = vec![
             Room {
                 description: "A wind blows over the dunes of sand that cover the known world as you step up to a large dilapidated building.
 
@@ -124,7 +115,7 @@ You are greeted with a metal door weathered from the years and bearing a strange
                 ],
                 interactables: vec![Interactable{id: "lab_entrance".to_string(), name: "door".to_string(), interaction_description: "The pendant fits into the panel in the door.
 You hear a brief beeping sound and see a few lights on the panel turn from red to green.
-The door swings open to the south.", before_interaction_description: "You notice a small panel to the side of the door with what seems to be a slot to fit something in.", after_interaction_description: "The door slides open and exposes a path to the south.", interacted: false, prerequisite_item: "pendant".to_string()}],
+The door swings open to the south.", before_interaction_description: "You notice a small panel to the side of the door with what seems to be a slot to fit something in.", after_interaction_description: "The door has slid open and exposed a path to the south.", interacted: false, prerequisite_item: "pendant".to_string()}],
                 items: vec![],
             },
             Room {
@@ -185,9 +176,6 @@ The door swings open to the south.", before_interaction_description: "You notice
                 items: vec![],
     }
         ];
-    let mut current_room_idx = 0;
-
-    let mut INVENTORY = create_inventory();
 
     return GameState {
         current_room_idx: 0,
@@ -249,6 +237,10 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
         }
     }
 
+    if parsed_input.object_noun.is_empty() {
+        new_game_state.sys_message = format!("I was unable to understand your command.  Please re-enter and try again.")    
+    }
+
     match parsed_input.intent {
         Intent::EXAMINE => {
             if parsed_input.is_interactable {
@@ -276,14 +268,21 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                     .position(|x| x.name == parsed_input.object_noun)
                     .unwrap();
 
-                new_game_state.sys_message = if room.interactables[inter_pos].prerequisite_item.is_empty() {
-                    room.interactables[inter_pos].interact();
-                    room.interactables[inter_pos].interaction_description.to_string()
-                } else {
-                    format!(
-                        "You currently can not interact with {}",
-                        room.interactables[inter_pos].name.clone()
-                    )
+                new_game_state.sys_message = match room.interactables.get_mut(inter_pos) {
+                    Some(x) => {
+                        if x.prerequisite_item.is_empty() {
+                            x.interact();
+                            x.interaction_description.to_string()
+                        } else {
+                            format!(
+                                "You currently can not interact with {}",
+                                room.interactables[inter_pos].name.clone()
+                            )
+                        }
+                    },
+                    None => { 
+                        format!("There is no {} in this room", parsed_input.object_noun) 
+                    },
                 }
             }
         }
@@ -343,7 +342,37 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                     format!("There is no path to the {}", parsed_input.object_noun);
             }
         }
-        Intent::USE => new_game_state.sys_message = format!("use"),
+        Intent::USE => { 
+            let is_usable = parsed_input.is_item && (user_inventory.get::<str>(&parsed_input.object_noun).unwrap()).is_in_inventory();
+
+            new_game_state.sys_message = if is_usable {
+                let inter_pos = room
+                    .interactables
+                    .iter()
+                    .position(|x| x.prerequisite_item == parsed_input.object_noun)
+                    .unwrap();
+
+                match room.interactables.get_mut(inter_pos) {
+                    Some(x) => {
+                        if x.is_interacted() {
+                            format!("{} has already been used here", x.prerequisite_item)
+                        } else {
+                            // unlock room if it is dependent on the interactable_id
+                            let room_pos = room.exits.iter().position(|exit| exit.interactable_id == x.id).unwrap();
+                            match room.exits.get_mut(room_pos) {
+                                Some(exit) => exit.unlock(),
+                                None => println!("silently do not unlock the exit"),
+                            };
+                            x.interact(); 
+                            x.interaction_description.to_string()
+                        }
+                    },
+                    None => format!("There is no use for the item {} in this room", parsed_input.object_noun),
+                }
+            } else {
+                format!("You have no item of that name in your inventory")  
+            }
+        },
         _ => new_game_state.sys_message = format!("You didn't choose an appropriate command"),
     }
 
@@ -388,6 +417,66 @@ mod tests {
         let before_state = update(game_state, "go south".to_string());
 
         assert_eq!("The way is locked. You must unlock the path before you proceed.".to_string(), before_state.sys_message);
+    }
+
+    #[test]
+    fn test_use_to_unlock() {
+       let new_inter = Interactable {
+           after_interaction_description: "The stone is sitting on the floor",
+            before_interaction_description: "You see a stone sitting in between two logs",
+            id: "lab_stone".to_string(),
+            interacted: false,
+            interaction_description: "The stone rolls onto the floor",
+            name: "stone".to_string(),
+            prerequisite_item: "helmet".to_string(),
+       };
+
+        let new_item = Item {
+            name: "helmet".to_string(),
+            description: "A large, blue helmet".to_string(),
+            location: ItemState::Inventory,
+        };
+
+        let rooms = vec![
+            Room {
+                description: "Test Room 1".to_string(),
+                exits: vec![Exit {
+                    direction: Direction::S,
+                    interactable_id: "lab_stone".to_string(),
+                    target: 1,
+                    locked: true,
+                }],
+                interactables: vec![new_inter],
+                items: vec!["helmet"],
+            },
+            Room {
+                description: "Test Room 2".to_string(),
+                exits: vec![Exit {
+                    direction: Direction::N,
+                    interactable_id: "".to_string(),
+                    target: 0,
+                    locked: false,
+                }],
+                interactables: vec![],
+                items: vec![],
+            }
+        ];
+
+        let mut inventory = create_inventory();
+        inventory.get_mut("helmet").unwrap().location = ItemState::Inventory;
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: inventory,
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let expected_after_description = "The stone rolls onto the floor";
+
+        let after_interacted_state = update(game_state, "use helmet".to_string());
+
+        assert_eq!(after_interacted_state.sys_message, expected_after_description);
     }
 
     #[test]
@@ -440,6 +529,46 @@ mod tests {
         );
         assert_eq!(
             expected_after_interactable_description,
+            after_state.sys_message
+        );
+    }
+
+    #[test]
+    fn test_no_interactable() {
+        let new_inter = Interactable {
+            after_interaction_description: "The stone is sitting on the floor",
+            before_interaction_description: "You see a stone sitting in between two logs",
+            id: "lab_stone".to_string(),
+            interacted: false,
+            interaction_description: "The stone rolls onto the floor",
+            name: "stone".to_string(),
+            prerequisite_item: "".to_string(),
+        };
+
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                interactable_id: "".to_string(),
+                target: 1,
+                locked: false,
+            }],
+            interactables: vec![new_inter],
+            items: vec![],
+        }];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let expected_interactable_description = "I was unable to understand your command.  Please re-enter and try again.";
+        let after_state = update(game_state, "examine face".to_string());
+
+        assert_eq!(
+            expected_interactable_description,
             after_state.sys_message
         );
     }
@@ -548,8 +677,8 @@ mod tests {
         let before_state = update(game_state.clone(), "grab helmet".to_string());
         let new_game_state = update(before_state.clone(), "list inventory".to_string());
 
-        let expected_sys_message = "Your inventory:\nhelmet: a blue helmet covered in dirt\n";
+        let expected_sys_message = "Your inventory:\nhelmet: a blue helmet covered in dirt\npendant: A rusty pendant with a small seal on it.\n";
 
-        assert_eq!(expected_sys_message, new_game_state.sys_message);
+        assert!(new_game_state.sys_message.contains("helmet: a blue helmet") && new_game_state.sys_message.contains("pendant: A rusty pendant"));
     }
 }

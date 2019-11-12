@@ -93,6 +93,7 @@ impl Component for Model {
 
                 let input = self.app_state.value.clone();
                 let next_game_state = update(self.game_state.clone(), input);
+                self.console.log(&next_game_state.sys_message);
 
                 self.app_state.entries.insert(
                     0,
