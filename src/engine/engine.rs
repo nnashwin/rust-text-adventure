@@ -343,16 +343,20 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
             }
         }
         Intent::USE => { 
-            let is_usable = parsed_input.is_item && (user_inventory.get::<str>(&parsed_input.object_noun).unwrap()).is_in_inventory();
+            let is_in_inventory = match user_inventory.get::<str>(&parsed_input.object_noun) {
+                Some(x) => x.is_in_inventory(),
+                None => false,
+            };
 
-            new_game_state.sys_message = if is_usable {
-                let inter_pos = room
+
+            let inter_pos = room
                     .interactables
                     .iter()
-                    .position(|x| x.prerequisite_item == parsed_input.object_noun)
-                    .unwrap();
+                    .position(|x| x.prerequisite_item == parsed_input.object_noun);
 
-                match room.interactables.get_mut(inter_pos) {
+            // is_some check is used to ensure that the interactable is actually in this room
+            new_game_state.sys_message = if parsed_input.is_item && is_in_inventory && inter_pos.is_some() {
+                match room.interactables.get_mut(inter_pos.unwrap()) {
                     Some(x) => {
                         if x.is_interacted() {
                             format!("{} has already been used here", x.prerequisite_item)
@@ -369,9 +373,13 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                     },
                     None => format!("There is no use for the item {} in this room", parsed_input.object_noun),
                 }
+            // check for if the item is in your inventory first in order to not let the player know 
+            // the item is required here if they don't have the item
+            } else if !is_in_inventory {
+                format!("You have no item of that name in your inventory")
             } else {
-                format!("You have no item of that name in your inventory")  
-            }
+                format!("You can not use `{}` here", parsed_input.object_noun)
+            };
         },
         _ => new_game_state.sys_message = format!("You didn't choose an appropriate command"),
     }
