@@ -4,7 +4,6 @@ use std::collections::HashMap;
 pub enum ItemState {
     Room,
     Inventory,
-    Equipped,
 }
 
 #[derive(Clone, Debug)]
@@ -27,22 +26,12 @@ impl Item {
         &self.name
     }
 
-    pub fn equip(&mut self) {
-        self.location = match self.location {
-            ItemState::Room => ItemState::Room,
-            _ => ItemState::Equipped,
-        }
+    pub fn is_in_inventory(&self) -> bool {
+        self.location == ItemState::Inventory
     }
 
     pub fn to_inventory(&mut self) {
         self.location = match self.location {
-            _ => ItemState::Inventory,
-        }
-    }
-
-    pub fn unequip(&mut self) {
-        self.location = match self.location {
-            ItemState::Room => ItemState::Room,
             _ => ItemState::Inventory,
         }
     }
@@ -66,6 +55,15 @@ pub fn create_inventory() -> HashMap<&'static str, Item> {
             name: "buster".to_string(),
             description: "A large cannon with four buttons".to_string(),
             location: ItemState::Room,
+        },
+    );
+
+    map.insert(
+        "pendant",
+        Item {
+            name: "pendant".to_string(),
+            description: "A rusty pendant with a small seal on it.".to_string(),
+            location: ItemState::Inventory,
         },
     );
 
@@ -111,35 +109,6 @@ mod tests {
             description: "test desc".to_string(),
             location: ItemState::Room,
         };
-
-        assert_eq!(new_item.get_location(), &expected);
-    }
-
-    #[test]
-    fn test_equip() {
-        let expected = ItemState::Equipped;
-
-        let new_item = &mut Item {
-            name: "test".to_string(),
-            description: "test desc".to_string(),
-            location: ItemState::Inventory,
-        };
-
-        new_item.equip();
-
-        assert_eq!(new_item.get_location(), &expected);
-    }
-
-    fn test_equip_negative() {
-        let expected = ItemState::Room;
-
-        let new_item = &mut Item {
-            name: "test".to_string(),
-            description: "test desc".to_string(),
-            location: ItemState::Room,
-        };
-
-        new_item.equip();
 
         assert_eq!(new_item.get_location(), &expected);
     }

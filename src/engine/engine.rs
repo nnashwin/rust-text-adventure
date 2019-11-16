@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::io;
 
 #[path = "commands.rs"]
 mod commands;
@@ -21,9 +20,19 @@ use item::*;
 #[derive(Clone, Debug)]
 struct Exit {
     direction: Direction,
-    target: usize,
     locked: bool,
-    key: String,
+    interactable_id: String,
+    target: usize,
+}
+
+impl Exit {
+    fn is_locked(&self) -> bool {
+        self.locked
+    }
+
+    fn unlock(&mut self) {
+        self.locked = false
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -45,16 +54,22 @@ struct Input {
 
 #[derive(Clone, Debug)]
 struct Interactable {
-    name: String,
-    interaction_description: &'static str,
-    before_interaction_description: &'static str,
     after_interaction_description: &'static str,
+    before_interaction_description: &'static str,
+    id: String,
+    interaction_description: &'static str,
     interacted: bool,
+    name: String,
+    prerequisite_item: String,
 }
 
 impl Interactable {
     fn interact(&mut self) {
         self.interacted = true
+    }
+
+    fn is_interacted(&self) -> bool {
+        self.interacted
     }
 }
 
@@ -80,30 +95,27 @@ impl Room {
     pub fn get_description(&self) -> &str {
         &self.description
     }
-    fn is_escape(&self) -> bool {
-        self.exits.len() == 0
-    }
 }
 
 pub fn start_game() -> GameState {
-    let mut rooms = vec![
+    let rooms = vec![
             Room {
-                description: "You find yourself in a room. There is a door to the south and a door to the east. A stone sits in the far corner of the room to your west".to_string(),
+                description: "A wind blows over the dunes of sand that cover the known world as you step up to a large dilapidated building.
+
+Unlike other ruins you have seen in the past, this structure does not speak of a lavish past.
+
+You are greeted with a metal door weathered from the years and bearing a strange insignia.".to_string(),
                 exits: vec![
                     Exit {
                         direction: Direction::S,
+                        interactable_id: "lab_entrance".to_string(),
+                        locked: true,
                         target: 2,
-                        locked: false,
-                        key: String::from(""),
-                    },
-                    Exit {
-                        direction: Direction::E,
-                        target: 1,
-                        locked: false,
-                        key: String::from(""),
                     },
                 ],
-                interactables: vec![Interactable{name: "stone".to_string(), interaction_description: "The stone falls to the floor", before_interaction_description: "You see a stone sitting in between two logs", after_interaction_description: "The stone rolled onto the floor and has revealed a secret passageway.", interacted: false}],
+                interactables: vec![Interactable{id: "lab_entrance".to_string(), name: "door".to_string(), interaction_description: "The pendant fits into the panel in the door.
+You hear a brief beeping sound and see a few lights on the panel turn from red to green.
+The door swings open to the south.", before_interaction_description: "You notice a small panel to the side of the door with what seems to be a slot to fit something in.", after_interaction_description: "The door has slid open and exposed a path to the south.", interacted: false, prerequisite_item: "pendant".to_string()}],
                 items: vec![],
             },
             Room {
@@ -111,15 +123,15 @@ pub fn start_game() -> GameState {
                 exits: vec![
                     Exit {
                         direction: Direction::W,
-                        target: 0,
+                        interactable_id: "".to_string(),
                         locked: false,
-                        key: String::from(""),
+                        target: 0,
                     },
                     Exit {
                         direction: Direction::S,
-                        target: 3,
+                        interactable_id: "".to_string(),
                         locked: false,
-                        key: String::from(""),
+                        target: 3,
                     },
                 ],
                 interactables: vec![],
@@ -130,9 +142,9 @@ pub fn start_game() -> GameState {
                 exits: vec![
                     Exit {
                         direction: Direction::N,
+                        interactable_id: "".to_string(),
                         target: 0,
                         locked: false,
-                        key: String::from(""),
                     },
                 ],
                 interactables: vec![],
@@ -143,15 +155,15 @@ pub fn start_game() -> GameState {
                 exits: vec![
                     Exit {
                         direction: Direction::N,
+                        interactable_id: "".to_string(),
                         target: 1,
                         locked: false,
-                        key: String::from(""),
                     },
                     Exit {
                         direction: Direction::S,
+                        interactable_id: "".to_string(),
                         target: 4,
                         locked: false,
-                        key: String::from(""),
                     },
                 ],
                 interactables: vec![],
@@ -164,9 +176,6 @@ pub fn start_game() -> GameState {
                 items: vec![],
     }
         ];
-    let mut current_room_idx = 0;
-
-    let mut INVENTORY = create_inventory();
 
     return GameState {
         current_room_idx: 0,
@@ -228,6 +237,10 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
         }
     }
 
+    if parsed_input.object_noun.is_empty() {
+        new_game_state.sys_message = format!("I was unable to understand your command.  Please re-enter and try again.")    
+    }
+
     match parsed_input.intent {
         Intent::EXAMINE => {
             if parsed_input.is_interactable {
@@ -249,12 +262,27 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
         }
         Intent::INTERACT => {
             if parsed_input.is_interactable {
-                for i in 0..room.interactables.len() {
-                    if room.interactables[i].name == parsed_input.object_noun {
-                        room.interactables[i].interact();
-                        new_game_state.sys_message =
-                            String::from(room.interactables[i].interaction_description);
-                    }
+                let inter_pos = room
+                    .interactables
+                    .iter()
+                    .position(|x| x.name == parsed_input.object_noun)
+                    .unwrap();
+
+                new_game_state.sys_message = match room.interactables.get_mut(inter_pos) {
+                    Some(x) => {
+                        if x.prerequisite_item.is_empty() {
+                            x.interact();
+                            x.interaction_description.to_string()
+                        } else {
+                            format!(
+                                "You currently can not interact with {}",
+                                room.interactables[inter_pos].name.clone()
+                            )
+                        }
+                    },
+                    None => { 
+                        format!("There is no {} in this room", parsed_input.object_noun) 
+                    },
                 }
             }
         }
@@ -299,6 +327,9 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                 if exit.is_none() {
                     new_game_state.sys_message =
                         format!("There is no exit leaving {}", parsed_input.object_noun);
+                } else if exit.unwrap().is_locked() {
+                    new_game_state.sys_message =
+                        format!("The way is locked. You must unlock the path before you proceed.");
                 } else if parsed_input.is_direction && exit.is_some() {
                     new_game_state.current_room_idx = exit.unwrap().target;
                     new_game_state.sys_message = new_game_state.rooms
@@ -306,12 +337,42 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                         .description
                         .to_string();
                 }
-            } else {
+            } else if !parsed_input.is_direction {
                 new_game_state.sys_message =
-                    format!("You can not move to {}", parsed_input.object_noun);
+                    format!("There is no path to the {}", parsed_input.object_noun);
             }
         }
-        Intent::USE => new_game_state.sys_message = format!("use"),
+        Intent::USE => { 
+            let is_usable = parsed_input.is_item && (user_inventory.get::<str>(&parsed_input.object_noun).unwrap()).is_in_inventory();
+
+            new_game_state.sys_message = if is_usable {
+                let inter_pos = room
+                    .interactables
+                    .iter()
+                    .position(|x| x.prerequisite_item == parsed_input.object_noun)
+                    .unwrap();
+
+                match room.interactables.get_mut(inter_pos) {
+                    Some(x) => {
+                        if x.is_interacted() {
+                            format!("{} has already been used here", x.prerequisite_item)
+                        } else {
+                            // unlock room if it is dependent on the interactable_id
+                            let room_pos = room.exits.iter().position(|exit| exit.interactable_id == x.id).unwrap();
+                            match room.exits.get_mut(room_pos) {
+                                Some(exit) => exit.unlock(),
+                                None => println!("silently do not unlock the exit"),
+                            };
+                            x.interact(); 
+                            x.interaction_description.to_string()
+                        }
+                    },
+                    None => format!("There is no use for the item {} in this room", parsed_input.object_noun),
+                }
+            } else {
+                format!("You have no item of that name in your inventory")  
+            }
+        },
         _ => new_game_state.sys_message = format!("You didn't choose an appropriate command"),
     }
 
@@ -323,22 +384,120 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_interact() {
+    fn test_locked_exit() {
         let new_inter = Interactable {
-            name: "stone".to_string(),
-            interaction_description: "The stone rolls onto the floor",
-            before_interaction_description: "You see a stone sitting in between two logs",
             after_interaction_description: "The stone is sitting on the floor",
+            before_interaction_description: "You see a stone sitting in between two logs",
+            id: "lab_stone".to_string(),
             interacted: false,
+            interaction_description: "The stone rolls onto the floor",
+            name: "stone".to_string(),
+            prerequisite_item: "".to_string(),
         };
 
         let rooms = vec![Room {
             description: "Test Room 1".to_string(),
             exits: vec![Exit {
                 direction: Direction::S,
+                interactable_id: "".to_string(),
+                target: 1,
+                locked: true,
+            }],
+            interactables: vec![new_inter],
+            items: vec![],
+        }];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let before_state = update(game_state, "go south".to_string());
+
+        assert_eq!("The way is locked. You must unlock the path before you proceed.".to_string(), before_state.sys_message);
+    }
+
+    #[test]
+    fn test_use_to_unlock() {
+       let new_inter = Interactable {
+           after_interaction_description: "The stone is sitting on the floor",
+            before_interaction_description: "You see a stone sitting in between two logs",
+            id: "lab_stone".to_string(),
+            interacted: false,
+            interaction_description: "The stone rolls onto the floor",
+            name: "stone".to_string(),
+            prerequisite_item: "helmet".to_string(),
+       };
+
+        let new_item = Item {
+            name: "helmet".to_string(),
+            description: "A large, blue helmet".to_string(),
+            location: ItemState::Inventory,
+        };
+
+        let rooms = vec![
+            Room {
+                description: "Test Room 1".to_string(),
+                exits: vec![Exit {
+                    direction: Direction::S,
+                    interactable_id: "lab_stone".to_string(),
+                    target: 1,
+                    locked: true,
+                }],
+                interactables: vec![new_inter],
+                items: vec!["helmet"],
+            },
+            Room {
+                description: "Test Room 2".to_string(),
+                exits: vec![Exit {
+                    direction: Direction::N,
+                    interactable_id: "".to_string(),
+                    target: 0,
+                    locked: false,
+                }],
+                interactables: vec![],
+                items: vec![],
+            }
+        ];
+
+        let mut inventory = create_inventory();
+        inventory.get_mut("helmet").unwrap().location = ItemState::Inventory;
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: inventory,
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let expected_after_description = "The stone rolls onto the floor";
+
+        let after_interacted_state = update(game_state, "use helmet".to_string());
+
+        assert_eq!(after_interacted_state.sys_message, expected_after_description);
+    }
+
+    #[test]
+    fn test_interact() {
+        let new_inter = Interactable {
+            after_interaction_description: "The stone is sitting on the floor",
+            before_interaction_description: "You see a stone sitting in between two logs",
+            id: "lab_stone".to_string(),
+            interacted: false,
+            interaction_description: "The stone rolls onto the floor",
+            name: "stone".to_string(),
+            prerequisite_item: "".to_string(),
+        };
+
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                interactable_id: "".to_string(),
                 target: 1,
                 locked: false,
-                key: String::from(""),
             }],
             interactables: vec![new_inter],
             items: vec![],
@@ -375,15 +534,55 @@ mod tests {
     }
 
     #[test]
+    fn test_no_interactable() {
+        let new_inter = Interactable {
+            after_interaction_description: "The stone is sitting on the floor",
+            before_interaction_description: "You see a stone sitting in between two logs",
+            id: "lab_stone".to_string(),
+            interacted: false,
+            interaction_description: "The stone rolls onto the floor",
+            name: "stone".to_string(),
+            prerequisite_item: "".to_string(),
+        };
+
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                interactable_id: "".to_string(),
+                target: 1,
+                locked: false,
+            }],
+            interactables: vec![new_inter],
+            items: vec![],
+        }];
+
+        let game_state = GameState {
+            current_room_idx: 0,
+            inventory: create_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        };
+
+        let expected_interactable_description = "I was unable to understand your command.  Please re-enter and try again.";
+        let after_state = update(game_state, "examine face".to_string());
+
+        assert_eq!(
+            expected_interactable_description,
+            after_state.sys_message
+        );
+    }
+
+    #[test]
     fn test_move() {
         let rooms = vec![
             Room {
                 description: "Test Room 1".to_string(),
                 exits: vec![Exit {
                     direction: Direction::S,
+                    interactable_id: "".to_string(),
                     target: 1,
                     locked: false,
-                    key: String::from(""),
                 }],
                 interactables: vec![],
                 items: vec![],
@@ -392,9 +591,9 @@ mod tests {
                 description: "Test Room 2".to_string(),
                 exits: vec![Exit {
                     direction: Direction::N,
+                    interactable_id: "".to_string(),
                     target: 0,
                     locked: false,
-                    key: String::from(""),
                 }],
                 interactables: vec![],
                 items: vec![],
@@ -429,9 +628,9 @@ mod tests {
             description: "Test Room 1".to_string(),
             exits: vec![Exit {
                 direction: Direction::S,
+                interactable_id: "".to_string(),
                 target: 1,
                 locked: false,
-                key: String::from(""),
             }],
             interactables: vec![],
             items: vec!["helmet"],
@@ -460,9 +659,9 @@ mod tests {
             description: "Test Room 1".to_string(),
             exits: vec![Exit {
                 direction: Direction::S,
+                interactable_id: "".to_string(),
                 target: 1,
                 locked: false,
-                key: String::from(""),
             }],
             interactables: vec![],
             items: vec!["helmet"],
@@ -478,8 +677,8 @@ mod tests {
         let before_state = update(game_state.clone(), "grab helmet".to_string());
         let new_game_state = update(before_state.clone(), "list inventory".to_string());
 
-        let expected_sys_message = "Your inventory:\nhelmet: a blue helmet covered in dirt\n";
+        let expected_sys_message = "Your inventory:\nhelmet: a blue helmet covered in dirt\npendant: A rusty pendant with a small seal on it.\n";
 
-        assert_eq!(expected_sys_message, new_game_state.sys_message);
+        assert!(new_game_state.sys_message.contains("helmet: a blue helmet") && new_game_state.sys_message.contains("pendant: A rusty pendant"));
     }
 }
