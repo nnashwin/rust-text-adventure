@@ -35,6 +35,12 @@ impl Item {
             _ => ItemState::Inventory,
         }
     }
+
+    pub fn to_room(&mut self) {
+        self.location = match self.location {
+            _ => ItemState::Room,
+        }
+    }
 }
 
 pub fn create_inventory() -> HashMap<&'static str, Item> {
@@ -109,6 +115,21 @@ mod tests {
             description: "test desc".to_string(),
             location: ItemState::Room,
         };
+
+        assert_eq!(new_item.get_location(), &expected);
+    }
+
+    #[test]
+    fn test_to_room() {
+        let expected = ItemState::Room;
+
+        let mut new_item = Item {
+            name: "test".to_string(),
+            description: "test desc".to_string(),
+            location: ItemState::Inventory,
+        };
+
+        new_item.to_room();
 
         assert_eq!(new_item.get_location(), &expected);
     }

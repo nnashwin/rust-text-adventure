@@ -368,6 +368,9 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                                 None => println!("silently do not unlock the exit"),
                             };
                             x.interact(); 
+                            // set the item to the room because it has been used and can not be
+                            // used again
+                            user_inventory.get_mut::<str>(&parsed_input.object_noun).unwrap().to_room();
                             x.interaction_description.to_string()
                         }
                     },
@@ -485,6 +488,9 @@ mod tests {
         let after_interacted_state = update(game_state, "use helmet".to_string());
 
         assert_eq!(after_interacted_state.sys_message, expected_after_description);
+
+        // ensure that the location is changed after using the helmet
+        assert_eq!(after_interacted_state.inventory.get("helmet").unwrap().get_location(), &ItemState::Room);
     }
 
     #[test]
