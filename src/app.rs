@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use serde_derive::{Deserialize, Serialize};
 use yew::events::IKeyboardEvent;
 use yew::services::ConsoleService;
@@ -37,7 +35,6 @@ pub struct AppState {
 pub enum Msg {
     Add,
     Update(String),
-    Win,
     None,
 }
 
@@ -95,13 +92,18 @@ impl Component for Model {
                 let next_game_state = update(self.game_state.clone(), input);
                 self.console.log(&next_game_state.sys_message);
 
-                self.app_state.entries.insert(
-                    0,
-                    Entry {
-                        text: next_game_state.sys_message.clone(),
-                        author: Author::System,
-                    },
-                );
+                let entry_text = &next_game_state.sys_message;
+
+                let inventory_items: Vec<&str> = entry_text.split_terminator("\n").collect();
+                for item in &inventory_items {
+                    self.app_state.entries.insert(
+                        0,
+                        Entry {
+                            text: item.to_string(),
+                            author: Author::System,
+                        },
+                    );
+                }
 
                 // Need to set next game_state so that the game actually updates
                 self.game_state = next_game_state;
@@ -110,16 +112,6 @@ impl Component for Model {
             }
             Msg::Update(val) => {
                 self.app_state.value = val;
-            }
-            Msg::Win => {
-                let entry = Entry {
-                    text: "You have won the entire game.  You have seen the pain Thomas went through for me.  Will you pull the plug?  Please.  I no longer desire to exist in this world. Let me...sleep.".to_string(),
-                    author: Author::System,
-                };
-
-                self.app_state.entries.push(entry);
-
-                self.app_state.has_won = true;
             }
             Msg::None => {}
         }
