@@ -398,6 +398,60 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
 mod tests {
     use super::*;
 
+    fn create_test_inventory() -> HashMap<&'static str, Item> {
+    let mut map = HashMap::new();
+
+    map.insert(
+        "helmet",
+        Item {
+            name: "helmet".to_string(),
+            description: "a blue helmet covered in dirt".to_string(),
+            location: ItemState::Room,
+        },
+    );
+
+    map.insert(
+        "buster",
+        Item {
+            name: "buster".to_string(),
+            description: "A large cannon with four buttons".to_string(),
+            location: ItemState::Room,
+        },
+    );
+
+    map.insert(
+        "pendant",
+        Item {
+            name: "pendant".to_string(),
+            description: "A rusty pendant with a small seal on it.".to_string(),
+            location: ItemState::Inventory,
+        },
+    );
+
+    map
+}
+
+    fn create_base_game_state() -> GameState {
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                interactable_id: "".to_string(),
+                target: 1,
+                locked: false,
+            }],
+            interactables: vec![],
+            items: vec!["helmet"],
+        }];
+
+        GameState {
+            current_room_idx: 0,
+            inventory: create_test_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        }
+    }
+
     #[test]
     fn test_locked_exit() {
         let new_inter = Interactable {
@@ -424,7 +478,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -477,7 +531,7 @@ mod tests {
             }
         ];
 
-        let mut inventory = create_inventory();
+        let mut inventory = create_test_inventory();
         inventory.get_mut("helmet").unwrap().location = ItemState::Inventory;
 
         let game_state = GameState {
@@ -523,7 +577,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -577,7 +631,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -620,7 +674,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -656,7 +710,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -687,7 +741,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -702,7 +756,16 @@ mod tests {
 
     #[test]
     fn test_empty_inventory_display_diff_message() {
-        let game_state = create_test_state();
-        println!("{:?}", game_state);
+        let mut game_state = create_base_game_state();
+        let has_inventory_state = update(game_state.clone(), "list inventory".to_string());
+
+        assert!(!has_inventory_state.sys_message.contains("You have no items in your inventory"));
+        assert!(has_inventory_state.sys_message.contains("rusty pendant with a small seal"));
+
+        game_state.inventory = HashMap::new();
+
+        let no_inventory_state = update(game_state.clone(), "list inventory".to_string());
+
+        assert!(no_inventory_state.sys_message.contains("You have no items in your inventory"));
     }
 }
