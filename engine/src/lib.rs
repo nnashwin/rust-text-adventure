@@ -302,8 +302,9 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
             }
         }
         Intent::LIST_INVENTORY => {
-            let mut inventory_message: String = "".to_owned();
-            inventory_message.push_str("Your inventory:\n");
+            let initial_msg = "Your inventory:\n";
+            let mut inventory_message: String = "".to_string();
+            inventory_message.push_str(initial_msg);
             for item in user_inventory.values() {
                 // If the item isn't in the Room, it is either in the user's inventory or equipped
                 // since there are currently only three states
@@ -316,7 +317,10 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                 }
             }
 
-            new_game_state.sys_message = inventory_message;
+            new_game_state.sys_message = match inventory_message == initial_msg {
+                true => "You have no items in your inventory".to_string(),
+                false => inventory_message,
+            };
         }
         Intent::MOVEMENT => {
             if parsed_input.is_direction {
@@ -694,5 +698,11 @@ mod tests {
         let expected_sys_message = "Your inventory:\nhelmet: a blue helmet covered in dirt\npendant: A rusty pendant with a small seal on it.\n";
 
         assert!(new_game_state.sys_message.contains("helmet: a blue helmet") && new_game_state.sys_message.contains("pendant: A rusty pendant"));
+    }
+
+    #[test]
+    fn test_empty_inventory_display_diff_message() {
+        let game_state = create_test_state();
+        println!("{:?}", game_state);
     }
 }

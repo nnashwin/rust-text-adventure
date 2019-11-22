@@ -2,9 +2,8 @@ use serde_derive::{Deserialize, Serialize};
 use yew::events::IKeyboardEvent;
 use yew::services::ConsoleService;
 use yew::{html, Component, ComponentLink, Html, Renderable, ShouldRender};
-#[path = "engine/engine.rs"]
-mod engine;
 
+extern crate engine;
 use engine::*;
 
 #[derive(Serialize, Debug, Deserialize, Eq, PartialEq)]

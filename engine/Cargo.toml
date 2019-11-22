@@ -1,0 +1,9 @@
+[package]
+authors = ["Tyler Boright <ru.lai.development@gmail.com>"]
+edition = "2018"
+name = "engine"
+version = "0.1.0"
+
+[dependencies]
+lazy_static = "0.1.*"
+phf = { features = ["macros"], path="../../rust-phf/phf" }
