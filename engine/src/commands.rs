@@ -34,6 +34,8 @@ pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
     "move" => Intent::MOVEMENT,
     "run" => Intent::MOVEMENT,
     "walk" => Intent::MOVEMENT,
+    "swipe" => Intent::USE,
+    "read" => Intent::USE,
     "use" => Intent::USE,
 };
 
