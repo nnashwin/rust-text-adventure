@@ -302,8 +302,9 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
             }
         }
         Intent::LIST_INVENTORY => {
-            let mut inventory_message: String = "".to_owned();
-            inventory_message.push_str("Your inventory:\n");
+            let initial_msg = "Your inventory:\n";
+            let mut inventory_message: String = "".to_string();
+            inventory_message.push_str(initial_msg);
             for item in user_inventory.values() {
                 // If the item isn't in the Room, it is either in the user's inventory or equipped
                 // since there are currently only three states
@@ -316,7 +317,10 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                 }
             }
 
-            new_game_state.sys_message = inventory_message;
+            new_game_state.sys_message = match inventory_message == initial_msg {
+                true => "You have no items in your inventory".to_string(),
+                false => inventory_message,
+            };
         }
         Intent::MOVEMENT => {
             if parsed_input.is_direction {
@@ -343,16 +347,20 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
             }
         }
         Intent::USE => { 
-            let is_usable = parsed_input.is_item && (user_inventory.get::<str>(&parsed_input.object_noun).unwrap()).is_in_inventory();
+            let is_in_inventory = match user_inventory.get::<str>(&parsed_input.object_noun) {
+                Some(x) => x.is_in_inventory(),
+                None => false,
+            };
 
-            new_game_state.sys_message = if is_usable {
-                let inter_pos = room
+
+            let inter_pos = room
                     .interactables
                     .iter()
-                    .position(|x| x.prerequisite_item == parsed_input.object_noun)
-                    .unwrap();
+                    .position(|x| x.prerequisite_item == parsed_input.object_noun);
 
-                match room.interactables.get_mut(inter_pos) {
+            // is_some check is used to ensure that the interactable is actually in this room
+            new_game_state.sys_message = if parsed_input.is_item && is_in_inventory && inter_pos.is_some() {
+                match room.interactables.get_mut(inter_pos.unwrap()) {
                     Some(x) => {
                         if x.is_interacted() {
                             format!("{} has already been used here", x.prerequisite_item)
@@ -364,14 +372,21 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
                                 None => println!("silently do not unlock the exit"),
                             };
                             x.interact(); 
+                            // set the item to the room because it has been used and can not be
+                            // used again
+                            user_inventory.get_mut::<str>(&parsed_input.object_noun).unwrap().to_room();
                             x.interaction_description.to_string()
                         }
                     },
                     None => format!("There is no use for the item {} in this room", parsed_input.object_noun),
                 }
+            // check for if the item is in your inventory first in order to not let the player know 
+            // the item is required here if they don't have the item
+            } else if !is_in_inventory {
+                format!("You have no item of that name in your inventory")
             } else {
-                format!("You have no item of that name in your inventory")  
-            }
+                format!("You can not use `{}` here", parsed_input.object_noun)
+            };
         },
         _ => new_game_state.sys_message = format!("You didn't choose an appropriate command"),
     }
@@ -382,6 +397,60 @@ pub fn update(prev_state: GameState, input: String) -> GameState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn create_test_inventory() -> HashMap<&'static str, Item> {
+    let mut map = HashMap::new();
+
+    map.insert(
+        "helmet",
+        Item {
+            name: "helmet".to_string(),
+            description: "a blue helmet covered in dirt".to_string(),
+            location: ItemState::Room,
+        },
+    );
+
+    map.insert(
+        "buster",
+        Item {
+            name: "buster".to_string(),
+            description: "A large cannon with four buttons".to_string(),
+            location: ItemState::Room,
+        },
+    );
+
+    map.insert(
+        "pendant",
+        Item {
+            name: "pendant".to_string(),
+            description: "A rusty pendant with a small seal on it.".to_string(),
+            location: ItemState::Inventory,
+        },
+    );
+
+    map
+}
+
+    fn create_base_game_state() -> GameState {
+        let rooms = vec![Room {
+            description: "Test Room 1".to_string(),
+            exits: vec![Exit {
+                direction: Direction::S,
+                interactable_id: "".to_string(),
+                target: 1,
+                locked: false,
+            }],
+            interactables: vec![],
+            items: vec!["helmet"],
+        }];
+
+        GameState {
+            current_room_idx: 0,
+            inventory: create_test_inventory(),
+            sys_message: "".to_string(),
+            rooms: rooms,
+        }
+    }
 
     #[test]
     fn test_locked_exit() {
@@ -409,7 +478,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -462,7 +531,7 @@ mod tests {
             }
         ];
 
-        let mut inventory = create_inventory();
+        let mut inventory = create_test_inventory();
         inventory.get_mut("helmet").unwrap().location = ItemState::Inventory;
 
         let game_state = GameState {
@@ -477,6 +546,9 @@ mod tests {
         let after_interacted_state = update(game_state, "use helmet".to_string());
 
         assert_eq!(after_interacted_state.sys_message, expected_after_description);
+
+        // ensure that the location is changed after using the helmet
+        assert_eq!(after_interacted_state.inventory.get("helmet").unwrap().get_location(), &ItemState::Room);
     }
 
     #[test]
@@ -505,7 +577,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -559,7 +631,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -602,7 +674,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -638,7 +710,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -669,7 +741,7 @@ mod tests {
 
         let game_state = GameState {
             current_room_idx: 0,
-            inventory: create_inventory(),
+            inventory: create_test_inventory(),
             sys_message: "".to_string(),
             rooms: rooms,
         };
@@ -680,5 +752,20 @@ mod tests {
         let expected_sys_message = "Your inventory:\nhelmet: a blue helmet covered in dirt\npendant: A rusty pendant with a small seal on it.\n";
 
         assert!(new_game_state.sys_message.contains("helmet: a blue helmet") && new_game_state.sys_message.contains("pendant: A rusty pendant"));
+    }
+
+    #[test]
+    fn test_empty_inventory_display_diff_message() {
+        let mut game_state = create_base_game_state();
+        let has_inventory_state = update(game_state.clone(), "list inventory".to_string());
+
+        assert!(!has_inventory_state.sys_message.contains("You have no items in your inventory"));
+        assert!(has_inventory_state.sys_message.contains("rusty pendant with a small seal"));
+
+        game_state.inventory = HashMap::new();
+
+        let no_inventory_state = update(game_state.clone(), "list inventory".to_string());
+
+        assert!(no_inventory_state.sys_message.contains("You have no items in your inventory"));
     }
 }
