@@ -26,6 +26,7 @@ pub static LEGAL_COMMANDS: phf::Map<&'static str, Intent> = phf_map! {
     "take" => Intent::INVENTORY,
     "grab" => Intent::INVENTORY,
     "push" => Intent::INTERACT,
+    "shake" => Intent::INTERACT,
     "touch" => Intent::INTERACT,
     "show" => Intent::LIST_INVENTORY,
     "list" => Intent::LIST_INVENTORY,
