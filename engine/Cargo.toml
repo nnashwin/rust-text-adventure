@@ -7,3 +7,4 @@ version = "0.1.0"
 [dependencies]
 lazy_static = "0.1.*"
 phf = { features = ["macros"], path="../../rust-phf/phf" }
+serde_json = "1.0"
