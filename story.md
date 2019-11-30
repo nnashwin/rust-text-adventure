@@ -39,6 +39,17 @@ Your character doesn't know too much about the ruins, but he/she does know that 
 1. An area where you can frame the scene of Thomas spending years developing the ultimate superweapon to destroy Albert's .
 1. A place you put the datapad to "save the world".
 
+## Random Ideas
+1. Let the Helmet send the player back into Thomas's dream world.  In the dream world, the player is transported to Thomas's memories and sees glimpses and scenes of the past.
+1. The first dream world will happen underground in Thomas's laboratory. When you take the elevator down, you are greeted with a giant room that contains a large, intact table that looks as if it could be
+an operating bed, a giant multi-tool; that is attached to the ceiling, and a large mainframe computer situated next to the wall.
+1. The room will ultimately have a secret exit that you can find after transporting into the different world from the past. 
+1. Don't make a dialogue system in the game, but in the past world's that you can visit, enable Thomas to pick up specific items to advance the story.
+1. The Helmet should be located in Thomas's Bedroom.
+-- It could have a name on the back to signify the importance.
+-- Thomas's bedroom is dissheveled, covered in clothes.
+1. The child's bedroom should have a secret room that needs to be unlocked to view.
+1. Puzzle in the Child's bedroom that unlocks the blaster somehow.
 
 ## Story Notes
 A wind blows over the dunes of sand that cover the known world as you step up to a large dilapidated building.
@@ -88,7 +99,7 @@ read datapad
 -- The datapad can not be used here
 
 go east
--- You are greeted with a 
+-- You are greeted with a sitting room 
 
 
 
