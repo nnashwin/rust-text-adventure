@@ -11,13 +11,6 @@ pub enum Direction {
     NW,
     SE,
     SW,
-    NONE,
-}
-
-impl Default for Direction {
-    fn default() -> Self {
-        Direction::NONE
-    }
 }
 
 static DIRECTION_MAPPINGS: phf::Map<&'static str, Direction> = phf_map! {
@@ -37,4 +30,25 @@ pub fn text_to_direction(text: &str) -> Option<Direction> {
 
 pub fn is_direction(direction: &str) -> bool {
     DIRECTION_MAPPINGS.contains_key(direction)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_direction_invalid() {
+        let expected = None;
+        let actual = text_to_direction("Hamster");
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn test_to_direction_valid() {
+        let expected = Some(Direction::N);
+        let actual = text_to_direction("north");
+
+        assert_eq!(expected, actual);
+        assert_eq!(actual.unwrap(), Direction::N);
+    }
 }
