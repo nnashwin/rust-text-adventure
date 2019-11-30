@@ -5,4 +5,7 @@ script:
     - cargo build --verbose
     - popd
     - cargo build --verbose --all
+    - pushd engine
+    - cargo test --verbose --all
+    - popd
     - cargo test --verbose --all
