@@ -1,39 +1,22 @@
 use std::collections::HashMap;
 
-#[path = "commands.rs"]
-mod commands;
-
-#[path = "direction.rs"]
-mod direction;
-
-#[path = "examine.rs"]
-mod examine;
-
-#[path = "item.rs"]
-mod item;
+pub mod commands;
+pub mod data;
+pub mod direction;
+pub mod examine;
+pub mod exit;
+pub mod interactable;
+pub mod item;
+pub mod room;
 
 use commands::*;
 use direction::*;
 use examine::*;
+use exit::*;
+use interactable::*;
 use item::*;
+use room::*;
 
-#[derive(Clone, Debug)]
-struct Exit {
-    direction: Direction,
-    locked: bool,
-    interactable_id: String,
-    target: usize,
-}
-
-impl Exit {
-    fn is_locked(&self) -> bool {
-        self.locked
-    }
-
-    fn unlock(&mut self) {
-        self.locked = false
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct GameState {
@@ -50,51 +33,6 @@ struct Input {
     is_interactable: bool,
     is_item: bool,
     object_noun: String,
-}
-
-#[derive(Clone, Debug)]
-struct Interactable {
-    after_interaction_description: &'static str,
-    before_interaction_description: &'static str,
-    id: String,
-    interaction_description: &'static str,
-    interacted: bool,
-    name: String,
-    prerequisite_item: String,
-}
-
-impl Interactable {
-    fn interact(&mut self) {
-        self.interacted = true
-    }
-
-    fn is_interacted(&self) -> bool {
-        self.interacted
-    }
-}
-
-impl Examine for Interactable {
-    fn examine(&self) -> &'static str {
-        if self.interacted {
-            self.after_interaction_description
-        } else {
-            self.before_interaction_description
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Room {
-    description: String,
-    interactables: Vec<Interactable>,
-    items: Vec<&'static str>,
-    exits: Vec<Exit>,
-}
-
-impl Room {
-    pub fn get_description(&self) -> &str {
-        &self.description
-    }
 }
 
 pub fn start_game() -> GameState {
@@ -115,7 +53,7 @@ You are greeted with a metal door weathered from the years and bearing a strange
                 ],
                 interactables: vec![Interactable{id: "lab_entrance".to_string(), name: "door".to_string(), interaction_description: "The pendant fits into the panel in the door.
 You hear a brief beeping sound and see a few lights on the panel turn from red to green.
-The door swings open to the south.", before_interaction_description: "You notice a small panel to the side of the door with what seems to be a slot to fit something in.", after_interaction_description: "The door has slid open and exposed a path to the south.", interacted: false, prerequisite_item: "pendant".to_string()}],
+The door swings open to the south.".to_string(), before_interaction_description: "You notice a small panel to the side of the door with what seems to be a slot to fit something in.".to_string(), after_interaction_description: "The door has slid open and exposed a path to the south.".to_string(), interacted: false, prerequisite_item: "pendant".to_string()}],
                 items: vec![],
             },
             Room {
@@ -135,7 +73,7 @@ The door swings open to the south.", before_interaction_description: "You notice
                     },
                 ],
                 interactables: vec![],
-                items: vec!["helmet"],
+                items: vec!["helmet".to_string()],
             },
             Room {
                 description: "You find yourself in a room. There is a door to the north".to_string(),
@@ -441,7 +379,7 @@ mod tests {
                 locked: false,
             }],
             interactables: vec![],
-            items: vec!["helmet"],
+            items: vec!["helmet".to_string()],
         }];
 
         GameState {
@@ -455,11 +393,11 @@ mod tests {
     #[test]
     fn test_locked_exit() {
         let new_inter = Interactable {
-            after_interaction_description: "The stone is sitting on the floor",
-            before_interaction_description: "You see a stone sitting in between two logs",
+            after_interaction_description: "The stone is sitting on the floor".to_string(),
+            before_interaction_description: "You see a stone sitting in between two logs".to_string(),
             id: "lab_stone".to_string(),
             interacted: false,
-            interaction_description: "The stone rolls onto the floor",
+            interaction_description: "The stone rolls onto the floor".to_string(),
             name: "stone".to_string(),
             prerequisite_item: "".to_string(),
         };
@@ -491,20 +429,14 @@ mod tests {
     #[test]
     fn test_use_to_unlock() {
        let new_inter = Interactable {
-           after_interaction_description: "The stone is sitting on the floor",
-            before_interaction_description: "You see a stone sitting in between two logs",
+           after_interaction_description: "The stone is sitting on the floor".to_string(),
+            before_interaction_description: "You see a stone sitting in between two logs".to_string(),
             id: "lab_stone".to_string(),
             interacted: false,
-            interaction_description: "The stone rolls onto the floor",
+            interaction_description: "The stone rolls onto the floor".to_string(),
             name: "stone".to_string(),
             prerequisite_item: "helmet".to_string(),
        };
-
-        let new_item = Item {
-            name: "helmet".to_string(),
-            description: "A large, blue helmet".to_string(),
-            location: ItemState::Inventory,
-        };
 
         let rooms = vec![
             Room {
@@ -516,7 +448,7 @@ mod tests {
                     locked: true,
                 }],
                 interactables: vec![new_inter],
-                items: vec!["helmet"],
+                items: vec!["helmet".to_string()],
             },
             Room {
                 description: "Test Room 2".to_string(),
@@ -554,11 +486,11 @@ mod tests {
     #[test]
     fn test_interact() {
         let new_inter = Interactable {
-            after_interaction_description: "The stone is sitting on the floor",
-            before_interaction_description: "You see a stone sitting in between two logs",
+            after_interaction_description: "The stone is sitting on the floor".to_string(),
+            before_interaction_description: "You see a stone sitting in between two logs".to_string(),
             id: "lab_stone".to_string(),
             interacted: false,
-            interaction_description: "The stone rolls onto the floor",
+            interaction_description: "The stone rolls onto the floor".to_string(),
             name: "stone".to_string(),
             prerequisite_item: "".to_string(),
         };
@@ -608,11 +540,11 @@ mod tests {
     #[test]
     fn test_no_interactable() {
         let new_inter = Interactable {
-            after_interaction_description: "The stone is sitting on the floor",
-            before_interaction_description: "You see a stone sitting in between two logs",
+            after_interaction_description: "The stone is sitting on the floor".to_string(),
+            before_interaction_description: "You see a stone sitting in between two logs".to_string(),
             id: "lab_stone".to_string(),
             interacted: false,
-            interaction_description: "The stone rolls onto the floor",
+            interaction_description: "The stone rolls onto the floor".to_string(),
             name: "stone".to_string(),
             prerequisite_item: "".to_string(),
         };
@@ -690,12 +622,6 @@ mod tests {
 
     #[test]
     fn test_update_inventory() {
-        let new_item = Item {
-            name: "helmet".to_string(),
-            description: "A large, blue helmet".to_string(),
-            location: ItemState::Room,
-        };
-
         let rooms = vec![Room {
             description: "Test Room 1".to_string(),
             exits: vec![Exit {
@@ -705,7 +631,7 @@ mod tests {
                 locked: false,
             }],
             interactables: vec![],
-            items: vec!["helmet"],
+            items: vec!["helmet".to_string()],
         }];
 
         let game_state = GameState {
@@ -736,7 +662,7 @@ mod tests {
                 locked: false,
             }],
             interactables: vec![],
-            items: vec!["helmet"],
+            items: vec!["helmet".to_string()],
         }];
 
         let game_state = GameState {
@@ -748,8 +674,6 @@ mod tests {
 
         let before_state = update(game_state.clone(), "grab helmet".to_string());
         let new_game_state = update(before_state.clone(), "list inventory".to_string());
-
-        let expected_sys_message = "Your inventory:\nhelmet: a blue helmet covered in dirt\npendant: A rusty pendant with a small seal on it.\n";
 
         assert!(new_game_state.sys_message.contains("helmet: a blue helmet") && new_game_state.sys_message.contains("pendant: A rusty pendant"));
     }

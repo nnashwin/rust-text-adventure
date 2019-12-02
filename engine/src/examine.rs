@@ -1,3 +1,3 @@
 pub trait Examine {
-    fn examine(&self) -> &'static str;
+    fn examine(&self) -> String;
 }

@@ -1,7 +1,8 @@
+use serde_derive::{Serialize, Deserialize};
 extern crate phf;
 use phf::phf_map;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum Direction {
     N,
     S,
