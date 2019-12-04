@@ -1,9 +1,23 @@
 # Outline
-Main mystery in the story: Albert ended the world.  But Thomas left a way to rebuild.
+Main mystery in the story: Albert ended the world.  Thomas was depressed and contemplated ending everyting.  Ultimately, he left a way to rebuild.
 
 Reason the character wants to find out all of the details: There is promise of a treasure "to light of the world"  in the ruin.  In this post apocalyptic world, "ruin running" is one of the main methods that people find technology to salvage and use to survive.
 
 Your character doesn't know too much about the ruins, but he/she does know that the ruins represent survival.  You happen upon this ruin after a wall collapses in a smaller ruin that many people have entered before.  This proves promising and potentially full of treasure. 
+
+## Backstory (Maybe can be intro)
+The Year is 2XXX.  The governments and world powers of old have gone.  During the Great War many people died and cities were destroyed.
+Only those of us who banded together and formed tribes and small villages in the wilderness remain.
+
+It's said your grandparents were one of the first to leave your village in the Catskills (think of name) mountains and take the long road to scout the ruins. They returned with wonders that has allowed the village to build and made life close to what it once was.
+
+Since their pilgrimage, many people in the village have made the trek to Robot City (think of name).
+
+You find yourself in a familiar building you have been in every year since you can remember coming to the ruins.
+
+As you were making to head back to the village, you stumbled and fell into a wall covered in dirt that had been made weak by termites chewing through the wood long ago.
+
+The wall gave way and crumbled to the floor. You notice a steel door directly ahead of you with an odd insignia carved into the metal.
 
 ## Story Events that lead to the character learning about what happened:
 1. Picking up the helmet that has recorded the past.
