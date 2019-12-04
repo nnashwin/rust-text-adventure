@@ -5,7 +5,7 @@ Reason the character wants to find out all of the details: There is promise of a
 
 Your character doesn't know too much about the ruins, but he/she does know that the ruins represent survival.  You happen upon this ruin after a wall collapses in a smaller ruin that many people have entered before.  This proves promising and potentially full of treasure. 
 
-## Backstory (Maybe can be intro)
+## Backstory (Maybe can be intro, think about this longer)
 The Year is 2XXX.  The governments and world powers of old have gone.  During the Great War many people died and cities were destroyed.
 Only those of us who banded together and formed tribes and small villages in the wilderness remain.
 
@@ -19,7 +19,7 @@ As you were making to head back to the village, you stumbled and fell into a wal
 
 The wall gave way and crumbled to the floor. You notice a steel door directly ahead of you with an odd insignia carved into the metal.
 
-## Story Events that lead to the character learning about what happened:
+## Vertical Slice Story Events that lead to the character learning about what happened:
 1. Picking up the helmet that has recorded the past.
 1. Picking up a blaster that can open specific blocked doors.
 1. Discovering the code to a final item in the Albert's lab.
@@ -31,6 +31,9 @@ The wall gave way and crumbled to the floor. You notice a steel door directly ah
 1. Seeing the first area where consciousness was created by both Thomas and Albert
 1. Finding an attachment to the helmet that allows you to scan blood and match to all humans who lived in Clatter City.
 1. Scanning the blood on the ground to find out it is that of Thomas's sister, Eda.
+
+
+## Stretch Story Events (Not for Demo)
 1. Seeing a scene where Albert is shown installing a chip into their robot creation's head to "speed up singularity"
 1. Seeing a scene where Albert, Thomas, and a tv crew are shown interviewing their initial creation.
 1. Seeing a scene where Albert and Thomas are watching the news broadcast in the lab and all of Albert's lines are cut out.
@@ -72,11 +75,21 @@ Unlike other ruins you have seen in the past, this structure does not speak of a
 
 You are greeted with a metal door weathered from the years and bearing a strange insignia.
 
-Insert Megaman or Dr. L ascii art.
+*examine room*
+
+You see a metal door weathered from the years and bearing a strange insignia in front of you.  To the right of the door, you see what appears to be a metal trashcan, rust over from years of disuse.
+
+*examine trashcan*
+
+You see a dirty looking pendant in the trashcan.
+
+*take pendant*
+
+You take the pendant.
 
 What do you do?
 
-go south*
+*go south*
 
 - Response
 You try to push the door open and it doesn't seem to move.
@@ -113,7 +126,12 @@ read datapad
 -- The datapad can not be used here
 
 go east
--- You are greeted with a sitting room 
+-- You are greeted with what appears to have once been a sitting room.  The room has rubble strewn about and a dilapidated couch sitting in the center of it.
 
+examine couch
+-- The couch is made of beaten up leather.  It appears to have once been a black color and has a book places on the far edge.
 
-
+examine book
+-- You pick up the book and open it up.
+The book turns out to be a photo album. You are greeted with a bunch of charred pictures and one left intact enough for you to make out part of the picture.
+You can see two college-aged boys facing the camera with their arms on each other's shoulders smiling in what appears to be the top-left half of the picture. You notice another arm on the right boy's shoulder, but the rest of the picture has been charred and you are not able to make out the rest.
