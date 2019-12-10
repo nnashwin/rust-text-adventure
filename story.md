@@ -161,7 +161,7 @@ examine / look in chest
 
 examine photograph
 -- a picture of what appears to be a young boy standing between two middle-aged men, all wearing baseball mitts and facing the camera.  You flip it over and see the names of each individual written in the location of where they are in the picture:
-Thomas, Fred, Albert
+Thomas, Gerald, Albert
 
 examine helmet
 -- You examine the helmet, and you find an inscription on the back:
@@ -187,8 +187,18 @@ You are greeted with a pinpad that contains lowercase letters and numbers
 The pinpad reads: "Please enter passcode to proceed."
 
 enter thomas
--- The pinpad flashes a darker green.
+-- The pinpad flashes a deep red.
 The pinpad reads: "That password is incorrect.  Please enter passcode to proceed."
+
+enter fred
+-- The pinpad flashes a bright green.
+It reads: "Welcome back Thomas".  The doors open and you are able to enter through the elevator door to the west.
+
+go west
+-- You enter the elevator and see there are only two floors, the floor you are on and one called basement.
+You press the button and the elevator descends to the basement.
+The elevator reaches the ground and opens up to an adjacent room.
+
 
 -- TODO Continue pinpad interaction and lead downstairs.
 
